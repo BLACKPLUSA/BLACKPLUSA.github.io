@@ -36,7 +36,8 @@
         }
 
         .container {
-            max-width: 1400px;
+            width: 100%;
+            max-width: 1800px;
             margin: 0 auto;
             position: relative;
             z-index: 1;
@@ -45,7 +46,7 @@
         h1 {
             text-align: center;
             margin-bottom: 20px;
-            font-size: 2.5rem;
+            font-size: 2.75rem;
             font-weight: 800;
             background: linear-gradient(135deg, #ff1493 0%, #ff69b4 25%, #ff1744 50%, #ff4569 75%, #ff1493 100%);
             background-size: 400% 400%;
@@ -87,11 +88,201 @@
             box-shadow: 0 4px 20px rgba(255, 20, 147, 0.4);
         }
 
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 30px;
+            align-items: start;
+        }
+
         .calculator-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
             gap: 30px;
-            margin-bottom: 40px;
+        }
+
+        .storage-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        .storage-title {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            font-weight: 600;
+            background: linear-gradient(90deg, #fff 0%, rgba(255, 255, 255, 0.7) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .storage-item {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .storage-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+            transform: translateX(-5px);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .storage-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .storage-grade {
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .storage-grade.grade-GODLY {
+            background: linear-gradient(45deg, 
+                #ff0080, #ff8c00, #ffd700, #00ff00, 
+                #00ffff, #0080ff, #8000ff, #ff0080);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: rainbowShift 3s linear infinite;
+        }
+
+        .storage-grade.grade-SSS {
+            background: linear-gradient(135deg, #6a1b9a, #8e24aa, #ab47bc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 1.5s ease infinite;
+        }
+
+        .storage-grade.grade-SS-plus {
+            background: linear-gradient(135deg, #ff1744, #ff5252);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 1.8s ease infinite;
+        }
+
+        .storage-grade.grade-SS {
+            background: linear-gradient(135deg, #e91e63, #f06292);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 2s ease infinite;
+        }
+
+        .storage-grade.grade-S-plus {
+            background: linear-gradient(135deg, #ffd700, #ffc107, #ff9800);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 2.5s ease infinite;
+        }
+
+        .storage-grade.grade-S {
+            background: linear-gradient(135deg, #ffd700, #ffb700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 3s ease infinite;
+        }
+
+        .storage-grade.grade-A-plus {
+            color: #ba68c8;
+        }
+
+        .storage-grade.grade-A {
+            color: #ab47bc;
+        }
+
+        .storage-grade.grade-B-plus {
+            color: #29b6f6;
+        }
+
+        .storage-grade.grade-B {
+            color: #42a5f5;
+        }
+
+        .storage-grade.grade-C-plus {
+            color: #7986cb;
+        }
+
+        .storage-grade.grade-C {
+            color: #607d8b;
+        }
+
+        .storage-grade.grade-poor {
+            color: #f44336;
+        }
+
+        .delete-btn {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid rgba(244, 67, 54, 0.3);
+            color: #f44336;
+            padding: 4px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            background: rgba(244, 67, 54, 0.3);
+            border-color: rgba(244, 67, 54, 0.5);
+        }
+
+        .storage-stats {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.8;
+        }
+
+        .storage-type {
+            color: #ff69b4;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .storage-score {
+            background: rgba(255, 20, 147, 0.1);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            color: #ff69b4;
+            font-weight: 600;
+        }
+
+        .storage-stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .storage-stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .storage-stat-name {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .storage-stat-value {
+            color: #fff;
+            font-weight: 500;
         }
 
         .card {
@@ -401,13 +592,14 @@
             left: -50%;
             width: 200%;
             height: 200%;
-            background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.3) 50%, transparent 70%);
-            transform: rotate(45deg) translateY(-100%);
-            transition: transform 0.6s;
+            background: linear-gradient(45deg, transparent 20%, rgba(255, 255, 255, 0.5) 50%, transparent 80%);
+            transform: rotate(45deg) translateY(-200%);
+            animation: shine 3s ease infinite;
         }
 
-        .grade-badge:hover::after {
-            transform: rotate(45deg) translateY(100%);
+        @keyframes shine {
+            0% { transform: rotate(45deg) translateY(-200%); }
+            50%, 100% { transform: rotate(45deg) translateY(200%); }
         }
 
         .grade-C { 
@@ -482,7 +674,7 @@
             animation: shimmer 1.5s ease infinite, gradientMove 2s ease infinite, glow 2s ease infinite;
         }
 
-        .grade-MASTER {
+        .grade-GODLY {
             background: linear-gradient(45deg, 
                 #ff0080, #ff8c00, #ffd700, #00ff00, 
                 #00ffff, #0080ff, #8000ff, #ff0080);
@@ -590,7 +782,7 @@
 
         .chart-container {
             position: relative;
-            height: 200px;
+            height: 300px;
             margin-top: 20px;
             background: rgba(255, 255, 255, 0.02);
             border-radius: 12px;
@@ -598,9 +790,42 @@
             overflow: hidden;
         }
 
+        .chart-toggle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .chart-toggle:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+
         .chart-canvas {
             width: 100%;
             height: 100%;
+            cursor: crosshair;
+        }
+
+        .chart-tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: 10;
         }
 
         .grade-table {
@@ -622,14 +847,123 @@
             border-bottom: none;
         }
 
+        .optional-stats {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
+        }
+
+        .stat-toggle.active {
+            background: linear-gradient(135deg, #4caf50, #45a049);
+            border-color: transparent;
+            color: white;
+        }
+
+        .stat-toggle input {
+            display: none;
+        }
+
+        .dual-score {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .score-item {
+            text-align: center;
+        }
+
+        .score-label {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 5px;
+        }
+
+        .save-btn {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #ff1493, #ff69b4);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(255, 20, 147, 0.3);
+        }
+
+        .save-btn::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(255, 20, 147, 0.4);
+        }
+
+        .save-btn:hover::before {
+            opacity: 1;
+        }
+
+        .empty-storage {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.4);
+            padding: 40px 20px;
+            font-size: 0.9rem;
+        }
+
         /* 모바일 반응형 */
+        @media (max-width: 1200px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .storage-panel {
+                position: static;
+                max-height: none;
+                margin-top: 30px;
+            }
+
+            .calculator-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         @media (max-width: 768px) {
             body {
                 padding: 15px;
             }
 
             h1 {
-                font-size: 2rem;
+                font-size: 2.2rem;
                 margin-bottom: 15px;
             }
 
@@ -641,11 +975,6 @@
             .char-type-btn {
                 padding: 10px 18px;
                 font-size: 0.85rem;
-            }
-
-            .calculator-grid {
-                grid-template-columns: 1fr;
-                gap: 20px;
             }
 
             .card {
@@ -742,7 +1071,7 @@
             }
 
             .chart-container {
-                height: 150px;
+                height: 200px;
                 padding: 15px;
             }
 
@@ -753,6 +1082,21 @@
 
             .grade-row {
                 padding: 6px 0;
+            }
+
+            .storage-panel {
+                padding: 20px;
+            }
+
+            .storage-title {
+                font-size: 1.1rem;
+            }
+        }
+
+        /* 와이드 모니터 대응 */
+        @media (min-width: 1800px) {
+            .calculator-grid {
+                grid-template-columns: repeat(3, 1fr);
             }
         }
     </style>
@@ -767,261 +1111,261 @@
             <button class="char-type-btn" onclick="selectCharacterType('def')">방어력 기반 딜러</button>
         </div>
         
-        <div class="calculator-grid">
-            <!-- 딜 기댓값 계산기 -->
-            <div class="card">
-                <div class="card-title">딜 기댓값 계산기</div>
-                
-                <div class="mode-toggle">
-                    <button class="mode-btn active" onclick="toggleComparisonMode('single')">단일 계산</button>
-                    <button class="mode-btn" onclick="toggleComparisonMode('compare')">비교 계산</button>
+        <div class="main-layout">
+            <div class="calculator-grid">
+                <!-- 딜 기댓값 계산기 -->
+                <div class="card">
+                    <div class="card-title">딜 기댓값 계산기</div>
+                    
+                    <div class="mode-toggle">
+                        <button class="mode-btn active" onclick="toggleComparisonMode('single')">단일 계산</button>
+                        <button class="mode-btn" onclick="toggleComparisonMode('compare')">비교 계산</button>
+                    </div>
+                    
+                    <div id="singleMode">
+                        <div class="input-group">
+                            <label id="totalStatLabel">전체 공격력</label>
+                            <input type="number" id="totalStat" placeholder="예: 2000" min="0" step="1">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label>치명타 확률 (%)</label>
+                            <input type="number" id="critRate" placeholder="예: 50" min="0" max="100" step="0.1">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label>치명타 피해 (%)</label>
+                            <input type="number" id="critDmg" placeholder="예: 100" min="0" step="0.1">
+                        </div>
+                        
+                        <div class="result-box">
+                            <div class="result-title">딜 기댓값 (100% 계수 기준)</div>
+                            <div class="result-value" id="expectedDmg">0</div>
+                            <div class="stat-bar">
+                                <div class="stat-fill" id="dmgBar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="info-section">
+                            <div class="info-item">
+                                <span>치명타 데미지</span>
+                                <span id="criticalDmg">0</span>
+                            </div>
+                            <div class="info-item">
+                                <span>데미지 증가율</span>
+                                <span id="dmgIncrease">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="compareMode" style="display: none;">
+                        <div class="comparison-container">
+                            <div class="comparison-section">
+                                <div class="comparison-title">세팅 A</div>
+                                <div class="input-group">
+                                    <label id="totalStatLabelA">전체 공격력</label>
+                                    <input type="number" id="totalStatA" placeholder="예: 2000" min="0" step="1">
+                                </div>
+                                <div class="input-group">
+                                    <label>치명타 확률 (%)</label>
+                                    <input type="number" id="critRateA" placeholder="예: 50" min="0" max="100" step="0.1">
+                                </div>
+                                <div class="input-group">
+                                    <label>치명타 피해 (%)</label>
+                                    <input type="number" id="critDmgA" placeholder="예: 100" min="0" step="0.1">
+                                </div>
+                                <div class="result-box">
+                                    <div class="result-title">딜 기댓값</div>
+                                    <div class="result-value" id="expectedDmgA">0</div>
+                                </div>
+                            </div>
+                            
+                            <div class="comparison-section">
+                                <div class="comparison-title">세팅 B</div>
+                                <div class="input-group">
+                                    <label id="totalStatLabelB">전체 공격력</label>
+                                    <input type="number" id="totalStatB" placeholder="예: 2000" min="0" step="1">
+                                </div>
+                                <div class="input-group">
+                                    <label>치명타 확률 (%)</label>
+                                    <input type="number" id="critRateB" placeholder="예: 50" min="0" max="100" step="0.1">
+                                </div>
+                                <div class="input-group">
+                                    <label>치명타 피해 (%)</label>
+                                    <input type="number" id="critDmgB" placeholder="예: 100" min="0" step="0.1">
+                                </div>
+                                <div class="result-box">
+                                    <div class="result-title">딜 기댓값</div>
+                                    <div class="result-value" id="expectedDmgB">0</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="comparison-result">
+                            <div class="result-title">비교 결과</div>
+                            <div id="comparisonResult"></div>
+                        </div>
+                    </div>
                 </div>
                 
-                <div id="singleMode">
+                <!-- 스탯 효율 계산기 -->
+                <div class="card">
+                    <div class="card-title">스탯 효율 계산기</div>
+                    
                     <div class="input-group">
-                        <label id="baseStatLabel">기초 공격력</label>
-                        <input type="number" id="baseStat" placeholder="예: 1000" min="0" step="1">
+                        <label id="baseStatLabel2">기초 공격력</label>
+                        <input type="number" id="baseAtk" placeholder="예: 1000" min="0" step="1">
                     </div>
                     
                     <div class="input-group">
-                        <label id="statPercentLabel">공격력 %</label>
-                        <input type="number" id="statPercent" placeholder="예: 50" min="0" step="0.1">
-                    </div>
-                    
-                    <div class="input-group">
-                        <label id="flatStatLabel">깡공 (+)</label>
-                        <input type="number" id="flatStat" placeholder="예: 311" min="0" step="1">
-                    </div>
-                    
-                    <div class="input-group">
-                        <label>치명타 확률 (%)</label>
-                        <input type="number" id="critRate" placeholder="예: 50" min="0" max="100" step="0.1">
-                    </div>
-                    
-                    <div class="input-group">
-                        <label>치명타 피해 (%)</label>
-                        <input type="number" id="critDmg" placeholder="예: 100" min="0" step="0.1">
+                        <label id="flatStatLabel2">깡공 (+)</label>
+                        <input type="number" id="flatAtk" placeholder="예: 311" min="0" step="1">
                     </div>
                     
                     <div class="result-box">
-                        <div class="result-title">딜 기댓값 (100% 계수 기준)</div>
-                        <div class="result-value" id="expectedDmg">0</div>
-                        <div class="stat-bar">
-                            <div class="stat-fill" id="dmgBar" style="width: 0%"></div>
+                        <div class="result-title" id="efficiencyTitle">깡공 효율 점수</div>
+                        <div class="result-value" id="efficiencyScore">0</div>
+                        <div class="efficiency-indicator">
+                            <span>효율성:</span>
+                            <span class="efficiency-badge" id="efficiencyBadge">계산 중...</span>
                         </div>
                     </div>
                     
                     <div class="info-section">
                         <div class="info-item">
-                            <span id="totalStatLabel">전체 공격력</span>
-                            <span id="totalStat">0</span>
+                            <span id="percentEquivLabel">공격력% 환산</span>
+                            <span id="atkPercentEquiv">0%</span>
                         </div>
                         <div class="info-item">
-                            <span>치명타 데미지</span>
-                            <span id="criticalDmg">0</span>
-                        </div>
-                        <div class="info-item">
-                            <span>데미지 증가율</span>
-                            <span id="dmgIncrease">0%</span>
+                            <span id="percentEfficiencyLabel">공격력% 대비 효율</span>
+                            <span id="percentEfficiency">0%</span>
                         </div>
                     </div>
                 </div>
                 
-                <div id="compareMode" style="display: none;">
-                    <div class="comparison-container">
-                        <div class="comparison-section">
-                            <div class="comparison-title">세팅 A</div>
-                            <div class="input-group">
-                                <label id="baseStatLabelA">기초 공격력</label>
-                                <input type="number" id="baseStatA" placeholder="예: 1000" min="0" step="1">
+                <!-- 치명타 최적화 계산기 -->
+                <div class="card">
+                    <div class="card-title">치명타 최적화 계산기</div>
+                    
+                    <div class="input-group">
+                        <label>크리티컬 밸류 (치확×2 + 치피)</label>
+                        <input type="number" id="critValue" placeholder="예: 200" min="0" step="0.1">
+                    </div>
+                    
+                    <div class="result-box">
+                        <div class="result-title">최적 치명타 배분</div>
+                        <div class="crit-optimizer-result">
+                            <div class="optimal-stat">
+                                <div class="result-title">최적 치명타 확률</div>
+                                <div class="optimal-value" id="optimalCR">0%</div>
                             </div>
-                            <div class="input-group">
-                                <label id="statPercentLabelA">공격력 %</label>
-                                <input type="number" id="statPercentA" placeholder="예: 50" min="0" step="0.1">
-                            </div>
-                            <div class="input-group">
-                                <label id="flatStatLabelA">깡공 (+)</label>
-                                <input type="number" id="flatStatA" placeholder="예: 311" min="0" step="1">
-                            </div>
-                            <div class="input-group">
-                                <label>치명타 확률 (%)</label>
-                                <input type="number" id="critRateA" placeholder="예: 50" min="0" max="100" step="0.1">
-                            </div>
-                            <div class="input-group">
-                                <label>치명타 피해 (%)</label>
-                                <input type="number" id="critDmgA" placeholder="예: 100" min="0" step="0.1">
-                            </div>
-                            <div class="result-box">
-                                <div class="result-title">딜 기댓값</div>
-                                <div class="result-value" id="expectedDmgA">0</div>
-                            </div>
-                        </div>
-                        
-                        <div class="comparison-section">
-                            <div class="comparison-title">세팅 B</div>
-                            <div class="input-group">
-                                <label id="baseStatLabelB">기초 공격력</label>
-                                <input type="number" id="baseStatB" placeholder="예: 1000" min="0" step="1">
-                            </div>
-                            <div class="input-group">
-                                <label id="statPercentLabelB">공격력 %</label>
-                                <input type="number" id="statPercentB" placeholder="예: 50" min="0" step="0.1">
-                            </div>
-                            <div class="input-group">
-                                <label id="flatStatLabelB">깡공 (+)</label>
-                                <input type="number" id="flatStatB" placeholder="예: 311" min="0" step="1">
-                            </div>
-                            <div class="input-group">
-                                <label>치명타 확률 (%)</label>
-                                <input type="number" id="critRateB" placeholder="예: 50" min="0" max="100" step="0.1">
-                            </div>
-                            <div class="input-group">
-                                <label>치명타 피해 (%)</label>
-                                <input type="number" id="critDmgB" placeholder="예: 100" min="0" step="0.1">
-                            </div>
-                            <div class="result-box">
-                                <div class="result-title">딜 기댓값</div>
-                                <div class="result-value" id="expectedDmgB">0</div>
+                            <div class="optimal-stat">
+                                <div class="result-title">최적 치명타 피해</div>
+                                <div class="optimal-value" id="optimalCD">0%</div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="comparison-result">
-                        <div class="result-title">비교 결과</div>
-                        <div id="comparisonResult"></div>
+                    <div class="chart-container">
+                        <button class="chart-toggle" onclick="toggleChartMode()">상세 모드</button>
+                        <canvas id="critChart" class="chart-canvas"></canvas>
+                        <div class="chart-tooltip" id="chartTooltip"></div>
                     </div>
-                </div>
-            </div>
-            
-            <!-- 스탯 효율 계산기 -->
-            <div class="card">
-                <div class="card-title">스탯 효율 계산기</div>
-                
-                <div class="input-group">
-                    <label id="baseStatLabel2">기초 공격력</label>
-                    <input type="number" id="baseAtk" placeholder="예: 1000" min="0" step="1">
-                </div>
-                
-                <div class="input-group">
-                    <label id="flatStatLabel2">깡공 (+)</label>
-                    <input type="number" id="flatAtk" placeholder="예: 311" min="0" step="1">
-                </div>
-                
-                <div class="result-box">
-                    <div class="result-title" id="efficiencyTitle">깡공 효율 점수</div>
-                    <div class="result-value" id="efficiencyScore">0</div>
-                    <div class="efficiency-indicator">
-                        <span>효율성:</span>
-                        <span class="efficiency-badge" id="efficiencyBadge">계산 중...</span>
-                    </div>
-                </div>
-                
-                <div class="info-section">
-                    <div class="info-item">
-                        <span id="percentEquivLabel">공격력% 환산</span>
-                        <span id="atkPercentEquiv">0%</span>
-                    </div>
-                    <div class="info-item">
-                        <span>1점당 스탯</span>
-                        <span id="atkPerPoint">0</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 치명타 최적화 계산기 -->
-            <div class="card">
-                <div class="card-title">치명타 최적화 계산기</div>
-                
-                <div class="input-group">
-                    <label>크리티컬 밸류 (치확×2 + 치피)</label>
-                    <input type="number" id="critValue" placeholder="예: 200" min="0" step="0.1">
-                </div>
-                
-                <div class="result-box">
-                    <div class="result-title">최적 치명타 배분</div>
-                    <div class="crit-optimizer-result">
-                        <div class="optimal-stat">
-                            <div class="result-title">최적 치명타 확률</div>
-                            <div class="optimal-value" id="optimalCR">0%</div>
+                    
+                    <div class="info-section">
+                        <div class="info-item">
+                            <span>최적 비율</span>
+                            <span id="optimalRatio">1:2</span>
                         </div>
-                        <div class="optimal-stat">
-                            <div class="result-title">최적 치명타 피해</div>
-                            <div class="optimal-value" id="optimalCD">0%</div>
+                        <div class="info-item">
+                            <span>딜 기댓값 (공격력 1000 기준)</span>
+                            <span id="optimalDmgValue">0</span>
                         </div>
                     </div>
                 </div>
                 
-                <div class="chart-container">
-                    <canvas id="critChart" class="chart-canvas"></canvas>
-                </div>
-                
-                <div class="info-section">
-                    <div class="info-item">
-                        <span>최적 비율</span>
-                        <span id="optimalRatio">1:2</span>
+                <!-- 성유물 점수 계산기 -->
+                <div class="card">
+                    <div class="card-title">성유물 종합 점수</div>
+                    
+                    <div class="artifact-type-selector">
+                        <button class="type-btn active" onclick="selectArtifactType('normal')">꽃/깃털/성배</button>
+                        <button class="type-btn" onclick="selectArtifactType('special')">시계/왕관</button>
                     </div>
-                    <div class="info-item">
-                        <span>딜 기댓값 증가</span>
-                        <span id="dmgOptimization">최적화됨</span>
+                    
+                    <div class="optional-stats">
+                        <label class="stat-toggle" onclick="toggleOptionalStat('er')">
+                            <input type="checkbox" id="erToggle">
+                            <span>원소 충전 효율</span>
+                        </label>
+                        <label class="stat-toggle" onclick="toggleOptionalStat('em')">
+                            <input type="checkbox" id="emToggle">
+                            <span>원소 마스터리</span>
+                        </label>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>치명타 확률 (%)</label>
+                        <input type="number" id="artifactCR" placeholder="예: 10" min="0" step="0.1">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>치명타 피해 (%)</label>
+                        <input type="number" id="artifactCD" placeholder="예: 20" min="0" step="0.1">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label id="artifactStatPercentLabel">공격력 (%)</label>
+                        <input type="number" id="artifactAtkP" placeholder="예: 15" min="0" step="0.1">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label id="artifactFlatStatLabel">깡공 (+)</label>
+                        <input type="number" id="artifactFlatAtk" placeholder="예: 50" min="0" step="1">
+                    </div>
+                    
+                    <div id="optionalInputs"></div>
+                    
+                    <div class="result-box">
+                        <div class="result-title">성유물 총점</div>
+                        <div id="scoreDisplay">
+                            <div class="result-value" id="artifactScore">0</div>
+                        </div>
+                        <div class="efficiency-indicator">
+                            <span>등급:</span>
+                            <span class="grade-badge" id="artifactGrade">계산 중...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="info-section">
+                        <div class="info-item">
+                            <span>치명타 점수</span>
+                            <span id="critScore">0</span>
+                        </div>
+                        <div class="info-item">
+                            <span id="mainStatScoreLabel">공격력 점수</span>
+                            <span id="atkScore">0</span>
+                        </div>
+                        <div id="optionalScores"></div>
+                    </div>
+                    
+                    <button class="save-btn" onclick="saveToStorage()">저장소에 추가</button>
+                    
+                    <div class="grade-table">
+                        <div id="gradeGuide"></div>
+                    </div>
+                    
+                    <div class="note-text" id="artifactNote">
+                        ※ 원소 마스터리, 원소 충전 효율은 선택 시에만 반영됩니다
                     </div>
                 </div>
             </div>
             
-            <!-- 성유물 점수 계산기 -->
-            <div class="card">
-                <div class="card-title">성유물 종합 점수</div>
-                
-                <div class="artifact-type-selector">
-                    <button class="type-btn active" onclick="selectArtifactType('normal')">꽃/깃털/성배</button>
-                    <button class="type-btn" onclick="selectArtifactType('special')">시계/왕관</button>
-                </div>
-                
-                <div class="input-group">
-                    <label>치명타 확률 (%)</label>
-                    <input type="number" id="artifactCR" placeholder="예: 10" min="0" step="0.1">
-                </div>
-                
-                <div class="input-group">
-                    <label>치명타 피해 (%)</label>
-                    <input type="number" id="artifactCD" placeholder="예: 20" min="0" step="0.1">
-                </div>
-                
-                <div class="input-group">
-                    <label id="artifactStatPercentLabel">공격력 (%)</label>
-                    <input type="number" id="artifactAtkP" placeholder="예: 15" min="0" step="0.1">
-                </div>
-                
-                <div class="input-group">
-                    <label id="artifactFlatStatLabel">깡공 (+)</label>
-                    <input type="number" id="artifactFlatAtk" placeholder="예: 50" min="0" step="1">
-                </div>
-                
-                <div class="result-box">
-                    <div class="result-title">성유물 총점</div>
-                    <div class="result-value" id="artifactScore">0</div>
-                    <div class="efficiency-indicator">
-                        <span>등급:</span>
-                        <span class="grade-badge" id="artifactGrade">계산 중...</span>
-                    </div>
-                </div>
-                
-                <div class="info-section">
-                    <div class="info-item">
-                        <span>치명타 점수</span>
-                        <span id="critScore">0</span>
-                    </div>
-                    <div class="info-item">
-                        <span id="mainStatScoreLabel">공격력 점수</span>
-                        <span id="atkScore">0</span>
-                    </div>
-                </div>
-                
-                <div class="grade-table">
-                    <div id="gradeGuide"></div>
-                </div>
-                
-                <div class="note-text">
-                    ※ 원소 마스터리, 원소 충전 효율은 반영되지 않습니다
+            <!-- 저장소 패널 -->
+            <div class="storage-panel">
+                <div class="storage-title">성유물 저장소</div>
+                <div id="storageList">
+                    <div class="empty-storage">저장된 성유물이 없습니다</div>
                 </div>
             </div>
         </div>
@@ -1031,6 +1375,12 @@
         let comparisonMode = 'single';
         let artifactType = 'normal';
         let characterType = 'atk';
+        let chartMode = 'simple';
+        let optionalStats = {
+            er: false,
+            em: false
+        };
+        let artifactStorage = [];
 
         const statNames = {
             atk: {
@@ -1039,7 +1389,10 @@
                 flat: '깡공 (+)',
                 total: '전체 공격력',
                 efficiency: '깡공 효율 점수',
-                percentEquiv: '공격력% 환산'
+                percentEquiv: '공격력% 환산',
+                percentEff: '공격력% 대비 효율',
+                maxFlat: 19,
+                maxPercent: 5.8
             },
             hp: {
                 base: '기초 체력',
@@ -1047,7 +1400,10 @@
                 flat: '깡체 (+)',
                 total: '전체 체력',
                 efficiency: '깡체 효율 점수',
-                percentEquiv: '체력% 환산'
+                percentEquiv: '체력% 환산',
+                percentEff: '체력% 대비 효율',
+                maxFlat: 299,
+                maxPercent: 5.8
             },
             def: {
                 base: '기초 방어력',
@@ -1055,7 +1411,10 @@
                 flat: '깡방 (+)',
                 total: '전체 방어력',
                 efficiency: '깡방 효율 점수',
-                percentEquiv: '방어력% 환산'
+                percentEquiv: '방어력% 환산',
+                percentEff: '방어력% 대비 효율',
+                maxFlat: 23,
+                maxPercent: 7.3
             }
         };
 
@@ -1073,24 +1432,16 @@
             const labels = statNames[characterType];
             
             // 딜 기댓값 계산기 라벨
-            document.getElementById('baseStatLabel').textContent = labels.base;
-            document.getElementById('statPercentLabel').textContent = labels.percent;
-            document.getElementById('flatStatLabel').textContent = labels.flat;
             document.getElementById('totalStatLabel').textContent = labels.total;
-            
-            // 비교 모드 라벨
-            document.getElementById('baseStatLabelA').textContent = labels.base;
-            document.getElementById('statPercentLabelA').textContent = labels.percent;
-            document.getElementById('flatStatLabelA').textContent = labels.flat;
-            document.getElementById('baseStatLabelB').textContent = labels.base;
-            document.getElementById('statPercentLabelB').textContent = labels.percent;
-            document.getElementById('flatStatLabelB').textContent = labels.flat;
+            document.getElementById('totalStatLabelA').textContent = labels.total;
+            document.getElementById('totalStatLabelB').textContent = labels.total;
             
             // 스탯 효율 계산기 라벨
             document.getElementById('baseStatLabel2').textContent = labels.base;
             document.getElementById('flatStatLabel2').textContent = labels.flat;
             document.getElementById('efficiencyTitle').textContent = labels.efficiency;
             document.getElementById('percentEquivLabel').textContent = labels.percentEquiv;
+            document.getElementById('percentEfficiencyLabel').textContent = labels.percentEff;
             
             // 성유물 점수 계산기 라벨
             document.getElementById('artifactStatPercentLabel').textContent = labels.percent;
@@ -1125,12 +1476,56 @@
             calculateArtifactScore();
         }
 
+        function toggleOptionalStat(stat) {
+            const checkbox = document.getElementById(`${stat}Toggle`);
+            optionalStats[stat] = !optionalStats[stat];
+            checkbox.checked = optionalStats[stat];
+            
+            const toggle = checkbox.parentElement;
+            if (optionalStats[stat]) {
+                toggle.classList.add('active');
+            } else {
+                toggle.classList.remove('active');
+            }
+            updateOptionalInputs();
+            calculateArtifactScore();
+        }
+
+        function updateOptionalInputs() {
+            const container = document.getElementById('optionalInputs');
+            let html = '';
+            
+            if (optionalStats.er) {
+                html += `
+                    <div class="input-group">
+                        <label>원소 충전 효율 (%)</label>
+                        <input type="number" id="artifactER" placeholder="예: 10" min="0" step="0.1" oninput="calculateArtifactScore()">
+                    </div>
+                `;
+            }
+            
+            if (optionalStats.em) {
+                html += `
+                    <div class="input-group">
+                        <label>원소 마스터리</label>
+                        <input type="number" id="artifactEM" placeholder="예: 40" min="0" step="1" oninput="calculateArtifactScore()">
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+
         function updateGradeGuide() {
             const gradeGuide = document.getElementById('gradeGuide');
-            const threshold = artifactType === 'normal' ? 0 : -11.7;
+            let threshold = artifactType === 'normal' ? 0 : -11.7;
+            
+            if (optionalStats.er || optionalStats.em) {
+                threshold += 11.7;
+            }
             
             const grades = [
-                { score: 85 + threshold, grade: 'MASTER' },
+                { score: 85 + threshold, grade: 'GODLY' },
                 { score: 80 + threshold, grade: 'SSS' },
                 { score: 77.5 + threshold, grade: 'SS+' },
                 { score: 75 + threshold, grade: 'SS' },
@@ -1159,20 +1554,16 @@
 
         // 딜 기댓값 계산
         function calculateExpectedDamage() {
-            const baseStat = parseFloat(document.getElementById('baseStat').value) || 0;
-            const statPercent = parseFloat(document.getElementById('statPercent').value) || 0;
-            const flatStat = parseFloat(document.getElementById('flatStat').value) || 0;
+            const totalStat = parseFloat(document.getElementById('totalStat').value) || 0;
             let critRate = parseFloat(document.getElementById('critRate').value) || 0;
             const critDmg = parseFloat(document.getElementById('critDmg').value) || 0;
             
             critRate = Math.min(critRate, 100);
             
-            const totalStat = baseStat + (baseStat * statPercent / 100) + flatStat;
             const normalDamage = totalStat;
             const criticalDamage = totalStat * (1 + critDmg / 100);
             const expectedDamage = normalDamage * (1 - critRate / 100) + criticalDamage * (critRate / 100);
             
-            document.getElementById('totalStat').textContent = Math.round(totalStat).toLocaleString();
             document.getElementById('expectedDmg').textContent = Math.round(expectedDamage).toLocaleString();
             document.getElementById('criticalDmg').textContent = Math.round(criticalDamage).toLocaleString();
             
@@ -1186,23 +1577,16 @@
 
         // 비교 모드 계산
         function calculateComparison() {
-            const baseStatA = parseFloat(document.getElementById('baseStatA').value) || 0;
-            const statPercentA = parseFloat(document.getElementById('statPercentA').value) || 0;
-            const flatStatA = parseFloat(document.getElementById('flatStatA').value) || 0;
+            const totalStatA = parseFloat(document.getElementById('totalStatA').value) || 0;
             let critRateA = parseFloat(document.getElementById('critRateA').value) || 0;
             const critDmgA = parseFloat(document.getElementById('critDmgA').value) || 0;
             
-            const baseStatB = parseFloat(document.getElementById('baseStatB').value) || 0;
-            const statPercentB = parseFloat(document.getElementById('statPercentB').value) || 0;
-            const flatStatB = parseFloat(document.getElementById('flatStatB').value) || 0;
+            const totalStatB = parseFloat(document.getElementById('totalStatB').value) || 0;
             let critRateB = parseFloat(document.getElementById('critRateB').value) || 0;
             const critDmgB = parseFloat(document.getElementById('critDmgB').value) || 0;
             
             critRateA = Math.min(critRateA, 100);
             critRateB = Math.min(critRateB, 100);
-            
-            const totalStatA = baseStatA + (baseStatA * statPercentA / 100) + flatStatA;
-            const totalStatB = baseStatB + (baseStatB * statPercentB / 100) + flatStatB;
             
             const expectedDmgA = totalStatA * (1 + (critRateA / 100) * (critDmgA / 100));
             const expectedDmgB = totalStatB * (1 + (critRateB / 100) * (critDmgB / 100));
@@ -1222,7 +1606,7 @@
             }
         }
 
-        // 스탯 효율 계산
+        // 스탯 효율 계산 (수정)
         function calculateStatEfficiency() {
             const baseAtk = parseFloat(document.getElementById('baseAtk').value) || 0;
             const flatAtk = parseFloat(document.getElementById('flatAtk').value) || 0;
@@ -1230,39 +1614,41 @@
             if (baseAtk === 0) {
                 document.getElementById('efficiencyScore').textContent = '0';
                 document.getElementById('atkPercentEquiv').textContent = '0%';
-                document.getElementById('atkPerPoint').textContent = '0';
+                document.getElementById('percentEfficiency').textContent = '0%';
                 document.getElementById('efficiencyBadge').textContent = '입력 필요';
                 document.getElementById('efficiencyBadge').className = 'efficiency-badge';
                 return;
             }
             
+            const stats = statNames[characterType];
             const atkPercentEquiv = (flatAtk / baseAtk) * 100;
             const efficiencyScore = atkPercentEquiv * 2;
             
+            // 최대 강화 수치 대비 효율 계산
+            const maxFlatEquivPercent = (stats.maxFlat / baseAtk) * 100;
+            const percentEfficiency = (atkPercentEquiv / stats.maxPercent) * 100;
+            
             document.getElementById('efficiencyScore').textContent = efficiencyScore.toFixed(1);
             document.getElementById('atkPercentEquiv').textContent = `${atkPercentEquiv.toFixed(1)}%`;
-            document.getElementById('atkPerPoint').textContent = efficiencyScore > 0 ? (flatAtk / efficiencyScore).toFixed(1) : '0';
+            document.getElementById('percentEfficiency').textContent = `${percentEfficiency.toFixed(1)}%`;
             
             const badge = document.getElementById('efficiencyBadge');
-            if (atkPercentEquiv >= 35) {
-                badge.textContent = '매우 높음';
-                badge.className = 'efficiency-badge excellent';
-            } else if (atkPercentEquiv >= 26) {
+            if (percentEfficiency > 50) {
                 badge.textContent = '높음';
-                badge.className = 'efficiency-badge good';
-            } else if (atkPercentEquiv >= 18 && atkPercentEquiv <= 22) {
-                badge.textContent = '보통';
-                badge.className = 'efficiency-badge average';
-            } else if (atkPercentEquiv < 18) {
-                badge.textContent = '낮음';
-                badge.className = 'efficiency-badge poor';
-            } else {
+                badge.className = 'efficiency-badge excellent';
+            } else if (percentEfficiency > 35) {
                 badge.textContent = '준수함';
                 badge.className = 'efficiency-badge good';
+            } else if (percentEfficiency > 20) {
+                badge.textContent = '보통';
+                badge.className = 'efficiency-badge average';
+            } else {
+                badge.textContent = '낮음';
+                badge.className = 'efficiency-badge poor';
             }
         }
 
-        // 치명타 최적화 계산 및 차트
+        // 치명타 최적화 계산 (수정)
         function calculateCritOptimization() {
             const critValue = parseFloat(document.getElementById('critValue').value) || 0;
             
@@ -1270,13 +1656,21 @@
                 document.getElementById('optimalCR').textContent = '0%';
                 document.getElementById('optimalCD').textContent = '0%';
                 document.getElementById('optimalRatio').textContent = '1:2';
-                document.getElementById('dmgOptimization').textContent = '입력 필요';
+                document.getElementById('optimalDmgValue').textContent = '0';
                 drawCritChart(0, 0);
                 return;
             }
             
-            let optimalCR = critValue / 3;
-            let optimalCD = (critValue / 3) * 2;
+            // 크리티컬 밸류를 치피 기준으로 환산
+            // CV = CR*2 + CD이므로 치피 기준 100이면 최적 배분은 25/50
+            let optimalCR = critValue / 4;
+            let optimalCD = critValue / 2;
+            
+            // 기본 치확/치피 5/50 고려
+            if (optimalCR < 5) {
+                optimalCR = 5;
+                optimalCD = critValue - 10;
+            }
             
             if (optimalCR > 100) {
                 optimalCR = 100;
@@ -1288,14 +1682,30 @@
             
             const ratio = optimalCR > 0 ? (optimalCD / optimalCR).toFixed(1) : '0';
             document.getElementById('optimalRatio').textContent = `1:${ratio}`;
-            document.getElementById('dmgOptimization').textContent = '최적 배분 완료';
+            
+            // 딜 기댓값 계산 (공격력 1000 기준)
+            const optimalDmg = 1000 * (1 + (optimalCR / 100) * (optimalCD / 100));
+            document.getElementById('optimalDmgValue').textContent = Math.round(optimalDmg).toLocaleString();
             
             drawCritChart(critValue, optimalCR);
+        }
+
+        function toggleChartMode() {
+            chartMode = chartMode === 'simple' ? 'detailed' : 'simple';
+            const toggle = document.querySelector('.chart-toggle');
+            toggle.textContent = chartMode === 'simple' ? '상세 모드' : '간단 모드';
+            
+            const critValue = parseFloat(document.getElementById('critValue').value) || 0;
+            if (critValue > 0) {
+                const optimalCR = Math.min(critValue / 4, 100);
+                drawCritChart(critValue, optimalCR);
+            }
         }
 
         function drawCritChart(critValue, optimalCR) {
             const canvas = document.getElementById('critChart');
             const ctx = canvas.getContext('2d');
+            const tooltip = document.getElementById('chartTooltip');
             
             canvas.width = canvas.offsetWidth;
             canvas.height = canvas.offsetHeight;
@@ -1304,36 +1714,69 @@
             
             if (critValue === 0) return;
             
-            // 그래프 그리기
-            const padding = 30;
+            const padding = 40;
             const graphWidth = canvas.width - padding * 2;
             const graphHeight = canvas.height - padding * 2;
             
-            // 축 그리기
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            // 배경 그리드 그리기
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
             ctx.lineWidth = 1;
+            
+            if (chartMode === 'detailed') {
+                // 세로 그리드
+                for (let i = 0; i <= 10; i++) {
+                    const x = padding + (i / 10) * graphWidth;
+                    ctx.beginPath();
+                    ctx.moveTo(x, padding);
+                    ctx.lineTo(x, canvas.height - padding);
+                    ctx.stroke();
+                }
+                
+                // 가로 그리드
+                for (let i = 0; i <= 5; i++) {
+                    const y = padding + (i / 5) * graphHeight;
+                    ctx.beginPath();
+                    ctx.moveTo(padding, y);
+                    ctx.lineTo(canvas.width - padding, y);
+                    ctx.stroke();
+                }
+            }
+            
+            // 축 그리기
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(padding, padding);
             ctx.lineTo(padding, canvas.height - padding);
             ctx.lineTo(canvas.width - padding, canvas.height - padding);
             ctx.stroke();
             
+            // 최대 효율 찾기
+            let maxEfficiency = 0;
+            for (let cr = 5; cr <= 100; cr++) {
+                const cd = critValue - cr * 2;
+                if (cd < 50) continue;
+                const efficiency = 1 + (cr / 100) * (cd / 100);
+                maxEfficiency = Math.max(maxEfficiency, efficiency);
+            }
+            
             // 효율 곡선 그리기
             ctx.strokeStyle = '#ff69b4';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 3;
             ctx.beginPath();
             
-            for (let i = 0; i <= 100; i++) {
-                const cr = Math.min(i, 100);
+            let started = false;
+            for (let cr = 5; cr <= 100; cr++) {
                 const cd = critValue - cr * 2;
-                if (cd < 0) continue;
+                if (cd < 50) continue;
                 
                 const efficiency = 1 + (cr / 100) * (cd / 100);
-                const x = padding + (cr / 100) * graphWidth;
-                const y = canvas.height - padding - (efficiency / 3) * graphHeight;
+                const x = padding + ((cr - 5) / 95) * graphWidth;
+                const y = canvas.height - padding - ((efficiency - 1) / (maxEfficiency - 1)) * graphHeight;
                 
-                if (i === 0) {
+                if (!started) {
                     ctx.moveTo(x, y);
+                    started = true;
                 } else {
                     ctx.lineTo(x, y);
                 }
@@ -1341,24 +1784,85 @@
             ctx.stroke();
             
             // 최적점 표시
-            const optX = padding + (optimalCR / 100) * graphWidth;
+            const optX = padding + ((optimalCR - 5) / 95) * graphWidth;
             const optEfficiency = 1 + (optimalCR / 100) * ((critValue - optimalCR * 2) / 100);
-            const optY = canvas.height - padding - (optEfficiency / 3) * graphHeight;
+            const optY = canvas.height - padding - ((optEfficiency - 1) / (maxEfficiency - 1)) * graphHeight;
             
+            // 최적점 강조
             ctx.fillStyle = '#ff1493';
             ctx.beginPath();
-            ctx.arc(optX, optY, 6, 0, Math.PI * 2);
+            ctx.arc(optX, optY, 8, 0, Math.PI * 2);
             ctx.fill();
             
-            // 레이블
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.strokeStyle = 'rgba(255, 20, 147, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(optX, optY, 12, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // 축 레이블
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
             ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
-            ctx.fillText('치확 (%)', canvas.width / 2, canvas.height - 5);
-            ctx.save();
-            ctx.translate(10, canvas.height / 2);
-            ctx.rotate(-Math.PI / 2);
-            ctx.fillText('효율', 0, 0);
-            ctx.restore();
+            ctx.textAlign = 'center';
+            
+            if (chartMode === 'detailed') {
+                // X축 레이블
+                for (let i = 0; i <= 10; i++) {
+                    const cr = 5 + i * 9.5;
+                    const x = padding + (i / 10) * graphWidth;
+                    ctx.fillText(`${Math.round(cr)}%`, x, canvas.height - padding + 20);
+                }
+                
+                // Y축 레이블
+                ctx.textAlign = 'right';
+                for (let i = 0; i <= 5; i++) {
+                    const efficiency = 1 + i * ((maxEfficiency - 1) / 5);
+                    const y = canvas.height - padding - (i / 5) * graphHeight;
+                    ctx.fillText(efficiency.toFixed(2), padding - 10, y + 5);
+                }
+            } else {
+                ctx.fillText('치명타 확률', canvas.width / 2, canvas.height - 5);
+                ctx.save();
+                ctx.translate(15, canvas.height / 2);
+                ctx.rotate(-Math.PI / 2);
+                ctx.fillText('딜 효율', 0, 0);
+                ctx.restore();
+            }
+            
+            // 마우스 이벤트
+            canvas.onmousemove = function(e) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                if (x >= padding && x <= canvas.width - padding && 
+                    y >= padding && y <= canvas.height - padding) {
+                    
+                    const cr = 5 + ((x - padding) / graphWidth) * 95;
+                    const cd = critValue - cr * 2;
+                    
+                    if (cd >= 50) {
+                        const efficiency = 1 + (cr / 100) * (cd / 100);
+                        
+                        tooltip.innerHTML = `
+                            치확: ${cr.toFixed(1)}%<br>
+                            치피: ${cd.toFixed(1)}%<br>
+                            효율: ${efficiency.toFixed(3)}
+                        `;
+                        tooltip.style.left = `${x + 10}px`;
+                        tooltip.style.top = `${y - 40}px`;
+                        tooltip.style.opacity = '1';
+                    } else {
+                        tooltip.style.opacity = '0';
+                    }
+                } else {
+                    tooltip.style.opacity = '0';
+                }
+            };
+            
+            canvas.onmouseleave = function() {
+                tooltip.style.opacity = '0';
+            };
         }
 
         // 성유물 점수 계산
@@ -1374,55 +1878,233 @@
             const baseAtkEstimate = 1000;
             const flatAtkScore = (flatAtk / baseAtkEstimate * 100) * 2;
             
-            const totalScore = critScore + atkPScore + flatAtkScore;
+            let totalScore = critScore + atkPScore + flatAtkScore;
+            let optionalScore = 0;
             
-            document.getElementById('artifactScore').textContent = totalScore.toFixed(1);
+            // 선택적 스탯 계산
+            if (optionalStats.er) {
+                const er = parseFloat(document.getElementById('artifactER')?.value) || 0;
+                const erScore = (er / 6.5) * 11.7;
+                optionalScore += erScore;
+            }
+            
+            if (optionalStats.em) {
+                const em = parseFloat(document.getElementById('artifactEM')?.value) || 0;
+                const emScore = (em / 23) * 11.7;
+                optionalScore += emScore;
+            }
+            
+            const totalWithOptional = totalScore + optionalScore;
+            
+            // 점수 표시
+            const scoreDisplay = document.getElementById('scoreDisplay');
+            if (optionalScore > 0) {
+                scoreDisplay.innerHTML = `
+                    <div class="dual-score">
+                        <div class="score-item">
+                            <div class="score-label">기본 점수</div>
+                            <div class="result-value">${totalScore.toFixed(1)}</div>
+                        </div>
+                        <div class="score-item">
+                            <div class="score-label">전체 점수</div>
+                            <div class="result-value">${totalWithOptional.toFixed(1)}</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                scoreDisplay.innerHTML = `<div class="result-value">${totalScore.toFixed(1)}</div>`;
+            }
+            
             document.getElementById('critScore').textContent = critScore.toFixed(1);
             document.getElementById('atkScore').textContent = (atkPScore + flatAtkScore).toFixed(1);
             
+            // 선택적 점수 표시
+            const optionalScoresDiv = document.getElementById('optionalScores');
+            let optionalHTML = '';
+            
+            if (optionalStats.er) {
+                const er = parseFloat(document.getElementById('artifactER')?.value) || 0;
+                const erScore = (er / 6.5) * 11.7;
+                optionalHTML += `
+                    <div class="info-item">
+                        <span>원충 점수</span>
+                        <span>${erScore.toFixed(1)}</span>
+                    </div>
+                `;
+            }
+            
+            if (optionalStats.em) {
+                const em = parseFloat(document.getElementById('artifactEM')?.value) || 0;
+                const emScore = (em / 23) * 11.7;
+                optionalHTML += `
+                    <div class="info-item">
+                        <span>원마 점수</span>
+                        <span>${emScore.toFixed(1)}</span>
+                    </div>
+                `;
+            }
+            
+            optionalScoresDiv.innerHTML = optionalHTML;
+            
+            // 등급 평가
             const badge = document.getElementById('artifactGrade');
             let threshold = artifactType === 'normal' ? 0 : -11.7;
             
-            if (totalScore >= 85 + threshold) {
-                badge.textContent = 'MASTER';
-                badge.className = 'grade-badge grade-MASTER';
-            } else if (totalScore >= 80 + threshold) {
+            if (optionalStats.er || optionalStats.em) {
+                threshold += 11.7;
+            }
+            
+            const scoreForGrade = optionalScore > 0 ? totalWithOptional : totalScore;
+            
+            if (scoreForGrade >= 85 + threshold) {
+                badge.textContent = 'GODLY';
+                badge.className = 'grade-badge grade-GODLY';
+            } else if (scoreForGrade >= 80 + threshold) {
                 badge.textContent = 'SSS';
                 badge.className = 'grade-badge grade-SSS';
-            } else if (totalScore >= 77.5 + threshold) {
+            } else if (scoreForGrade >= 77.5 + threshold) {
                 badge.textContent = 'SS+';
                 badge.className = 'grade-badge grade-SS-plus';
-            } else if (totalScore >= 75 + threshold) {
+            } else if (scoreForGrade >= 75 + threshold) {
                 badge.textContent = 'SS';
                 badge.className = 'grade-badge grade-SS';
-            } else if (totalScore >= 72.5 + threshold) {
+            } else if (scoreForGrade >= 72.5 + threshold) {
                 badge.textContent = 'S+';
                 badge.className = 'grade-badge grade-S-plus';
-            } else if (totalScore >= 70 + threshold) {
+            } else if (scoreForGrade >= 70 + threshold) {
                 badge.textContent = 'S (종결)';
                 badge.className = 'grade-badge grade-S';
-            } else if (totalScore >= 67.5 + threshold) {
+            } else if (scoreForGrade >= 67.5 + threshold) {
                 badge.textContent = 'A+';
                 badge.className = 'grade-badge grade-A-plus';
-            } else if (totalScore >= 65 + threshold) {
+            } else if (scoreForGrade >= 65 + threshold) {
                 badge.textContent = 'A';
                 badge.className = 'grade-badge grade-A';
-            } else if (totalScore >= 60 + threshold) {
+            } else if (scoreForGrade >= 60 + threshold) {
                 badge.textContent = 'B+';
                 badge.className = 'grade-badge grade-B-plus';
-            } else if (totalScore >= 55 + threshold) {
+            } else if (scoreForGrade >= 55 + threshold) {
                 badge.textContent = 'B';
                 badge.className = 'grade-badge grade-B';
-            } else if (totalScore >= 50 + threshold) {
+            } else if (scoreForGrade >= 50 + threshold) {
                 badge.textContent = 'C+';
                 badge.className = 'grade-badge grade-C-plus';
-            } else if (totalScore >= 45 + threshold) {
+            } else if (scoreForGrade >= 45 + threshold) {
                 badge.textContent = 'C';
                 badge.className = 'grade-badge grade-C';
             } else {
                 badge.textContent = '가치 없음';
                 badge.className = 'grade-badge poor';
             }
+            
+            updateGradeGuide();
+        }
+
+        function saveToStorage() {
+            const cr = parseFloat(document.getElementById('artifactCR').value) || 0;
+            const cd = parseFloat(document.getElementById('artifactCD').value) || 0;
+            const atkP = parseFloat(document.getElementById('artifactAtkP').value) || 0;
+            const flatAtk = parseFloat(document.getElementById('artifactFlatAtk').value) || 0;
+            
+            let stats = `치확: ${cr}%, 치피: ${cd}%`;
+            stats += `\n${statNames[characterType].percent}: ${atkP}%`;
+            stats += `\n${statNames[characterType].flat}: ${flatAtk}`;
+            
+            if (optionalStats.er) {
+                const er = parseFloat(document.getElementById('artifactER')?.value) || 0;
+                stats += `\n원충: ${er}%`;
+            }
+            
+            if (optionalStats.em) {
+                const em = parseFloat(document.getElementById('artifactEM')?.value) || 0;
+                stats += `\n원마: ${em}`;
+            }
+            
+            const grade = document.getElementById('artifactGrade').textContent;
+            const score = document.querySelector('#scoreDisplay .result-value:last-child').textContent;
+            const type = artifactType === 'normal' ? '꽃/깃털/성배' : '시계/왕관';
+            
+            const artifact = {
+                id: Date.now(),
+                type: type,
+                grade: grade,
+                score: score,
+                stats: stats,
+                characterType: characterType
+            };
+            
+            artifactStorage.push(artifact);
+            updateStorageDisplay();
+        }
+
+        function deleteFromStorage(id) {
+            artifactStorage = artifactStorage.filter(item => item.id !== id);
+            updateStorageDisplay();
+        }
+
+        function updateStorageDisplay() {
+            const storageList = document.getElementById('storageList');
+            
+            if (artifactStorage.length === 0) {
+                storageList.innerHTML = '<div class="empty-storage">저장된 성유물이 없습니다</div>';
+                return;
+            }
+            
+            let html = '';
+            artifactStorage.forEach(item => {
+                const gradeClass = getGradeClass(item.grade);
+                const statsArray = item.stats.split('\n');
+                
+                let statsHtml = '';
+                statsArray.forEach(stat => {
+                    const [name, value] = stat.split(': ');
+                    if (name && value) {
+                        statsHtml += `
+                            <div class="storage-stat-item">
+                                <span class="storage-stat-name">${name}</span>
+                                <span class="storage-stat-value">${value}</span>
+                            </div>
+                        `;
+                    }
+                });
+                
+                html += `
+                    <div class="storage-item">
+                        <div class="storage-item-header">
+                            <span class="storage-grade ${gradeClass}">${item.grade}</span>
+                            <button class="delete-btn" onclick="deleteFromStorage(${item.id})">삭제</button>
+                        </div>
+                        <div class="storage-stats">
+                            <div class="storage-type">
+                                <span>${item.type}</span>
+                                <span class="storage-score">${item.score}점</span>
+                            </div>
+                            ${statsHtml}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            storageList.innerHTML = html;
+        }
+
+        function getGradeClass(grade) {
+            const gradeMap = {
+                'GODLY': 'grade-GODLY',
+                'SSS': 'grade-SSS',
+                'SS+': 'grade-SS-plus',
+                'SS': 'grade-SS',
+                'S+': 'grade-S-plus',
+                'S (종결)': 'grade-S',
+                'A+': 'grade-A-plus',
+                'A': 'grade-A',
+                'B+': 'grade-B-plus',
+                'B': 'grade-B',
+                'C+': 'grade-C-plus',
+                'C': 'grade-C',
+                '가치 없음': 'grade-poor'
+            };
+            return gradeMap[grade] || '';
         }
 
         function recalculateAll() {
@@ -1434,20 +2116,14 @@
         }
 
         // 이벤트 리스너
-        document.getElementById('baseStat').addEventListener('input', calculateExpectedDamage);
-        document.getElementById('statPercent').addEventListener('input', calculateExpectedDamage);
-        document.getElementById('flatStat').addEventListener('input', calculateExpectedDamage);
+        document.getElementById('totalStat').addEventListener('input', calculateExpectedDamage);
         document.getElementById('critRate').addEventListener('input', calculateExpectedDamage);
         document.getElementById('critDmg').addEventListener('input', calculateExpectedDamage);
         
-        document.getElementById('baseStatA').addEventListener('input', calculateComparison);
-        document.getElementById('statPercentA').addEventListener('input', calculateComparison);
-        document.getElementById('flatStatA').addEventListener('input', calculateComparison);
+        document.getElementById('totalStatA').addEventListener('input', calculateComparison);
         document.getElementById('critRateA').addEventListener('input', calculateComparison);
         document.getElementById('critDmgA').addEventListener('input', calculateComparison);
-        document.getElementById('baseStatB').addEventListener('input', calculateComparison);
-        document.getElementById('statPercentB').addEventListener('input', calculateComparison);
-        document.getElementById('flatStatB').addEventListener('input', calculateComparison);
+        document.getElementById('totalStatB').addEventListener('input', calculateComparison);
         document.getElementById('critRateB').addEventListener('input', calculateComparison);
         document.getElementById('critDmgB').addEventListener('input', calculateComparison);
         
