@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>원신 성유물 효율 계산기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(79, 195, 247, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(156, 39, 176, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(255, 152, 0, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #667eea 100%);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 8s ease infinite;
+            text-shadow: 0 0 60px rgba(102, 126, 234, 0.5);
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 35px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 
+                0 10px 40px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .card-title {
+            font-size: 1.6rem;
+            margin-bottom: 25px;
+            font-weight: 600;
+            background: linear-gradient(90deg, #fff 0%, rgba(255, 255, 255, 0.7) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 5px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .comparison-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .comparison-section {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .comparison-title {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            text-align: center;
+            color: #4fc3f7;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 500;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 
+                0 0 0 4px rgba(102, 126, 234, 0.1),
+                inset 0 0 0 1px rgba(102, 126, 234, 0.5);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .result-box {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .result-box::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #4facfe);
+            border-radius: 16px;
+            opacity: 0;
+            z-index: -1;
+            transition: opacity 0.3s ease;
+        }
+
+        .result-box:hover::before {
+            opacity: 0.3;
+        }
+
+        .result-title {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .result-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff, #4fc3f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(79, 195, 247, 0.5);
+        }
+
+        .stat-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 12px;
+            position: relative;
+        }
+
+        .stat-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 4px;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .efficiency-indicator {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .efficiency-badge {
+            padding: 8px 16px;
+            border-radius: 24px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+
+        .excellent {
+            background: linear-gradient(135deg, #4caf50, #45a049);
+            color: white;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .good {
+            background: linear-gradient(135deg, #2196f3, #1976d2);
+            color: white;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+        }
+
+        .average {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+        }
+
+        .poor {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+        }
+
+        .info-section {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            align-items: center;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-item span:first-child {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9rem;
+        }
+
+        .info-item span:last-child {
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .comparison-result {
+            background: linear-gradient(135deg, rgba(156, 39, 176, 0.1), rgba(124, 77, 255, 0.1));
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 24px;
+            text-align: center;
+            border: 1px solid rgba(156, 39, 176, 0.2);
+        }
+
+        .winner-badge {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #9c27b0, #7b1fa2);
+            color: white;
+            border-radius: 30px;
+            font-weight: 600;
+            margin-top: 10px;
+            box-shadow: 0 6px 20px rgba(156, 39, 176, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 6px 20px rgba(156, 39, 176, 0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 8px 25px rgba(156, 39, 176, 0.6); }
+            100% { transform: scale(1); box-shadow: 0 6px 20px rgba(156, 39, 176, 0.4); }
+        }
+
+        .grade-badge {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .grade-C { 
+            background: linear-gradient(135deg, #607d8b, #455a64);
+            color: white;
+        }
+
+        .grade-C-plus { 
+            background: linear-gradient(135deg, #7986cb, #5c6bc0);
+            color: white;
+        }
+
+        .grade-B { 
+            background: linear-gradient(135deg, #42a5f5, #2196f3);
+            color: white;
+        }
+
+        .grade-B-plus { 
+            background: linear-gradient(135deg, #29b6f6, #03a9f4);
+            color: white;
+        }
+
+        .grade-A { 
+            background: linear-gradient(135deg, #ab47bc, #9c27b0);
+            color: white;
+            box-shadow: 0 4px 20px rgba(156, 39, 176, 0.4);
+        }
+
+        .grade-A-plus { 
+            background: linear-gradient(135deg, #ba68c8, #ab47bc);
+            color: white;
+            box-shadow: 0 4px 20px rgba(186, 104, 200, 0.4);
+        }
+
+        .grade-S {
+            background: linear-gradient(135deg, #ffd700, #ffb700);
+            color: #333;
+            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.5);
+            animation: shimmer 3s ease infinite;
+        }
+
+        .grade-S-plus {
+            background: linear-gradient(135deg, #ffd700, #ffc107, #ff9800);
+            color: #333;
+            box-shadow: 0 6px 25px rgba(255, 193, 7, 0.6);
+            animation: shimmer 2.5s ease infinite;
+        }
+
+        .grade-SS {
+            background: linear-gradient(135deg, #e91e63, #f06292, #e91e63);
+            background-size: 200% 200%;
+            color: white;
+            box-shadow: 0 6px 30px rgba(233, 30, 99, 0.5);
+            animation: shimmer 2s ease infinite, gradientMove 3s ease infinite;
+        }
+
+        .grade-SS-plus {
+            background: linear-gradient(135deg, #ff1744, #ff5252, #ff1744);
+            background-size: 200% 200%;
+            color: white;
+            box-shadow: 0 8px 35px rgba(255, 23, 68, 0.6);
+            animation: shimmer 1.8s ease infinite, gradientMove 2.5s ease infinite;
+        }
+
+        .grade-SSS {
+            background: linear-gradient(135deg, #6a1b9a, #8e24aa, #ab47bc, #8e24aa, #6a1b9a);
+            background-size: 300% 300%;
+            color: white;
+            box-shadow: 
+                0 10px 40px rgba(142, 36, 170, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.2);
+            animation: shimmer 1.5s ease infinite, gradientMove 2s ease infinite, glow 2s ease infinite;
+        }
+
+        .grade-MASTER {
+            background: linear-gradient(45deg, 
+                #ff0080, #ff8c00, #ffd700, #00ff00, 
+                #00ffff, #0080ff, #8000ff, #ff0080);
+            background-size: 400% 400%;
+            color: white;
+            font-weight: 900;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+            box-shadow: 
+                0 15px 50px rgba(255, 255, 255, 0.4),
+                inset 0 0 30px rgba(255, 255, 255, 0.3);
+            animation: 
+                rainbowShift 3s linear infinite,
+                shimmer 1s ease infinite,
+                glow 1.5s ease infinite,
+                float 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        @keyframes gradientMove {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 10px 40px rgba(142, 36, 170, 0.6); }
+            50% { box-shadow: 0 15px 60px rgba(142, 36, 170, 0.8); }
+        }
+
+        @keyframes rainbowShift {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 400% 50%; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .note-text {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 10px;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .artifact-type-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .type-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
+        }
+
+        .type-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .crit-optimizer-result {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .optimal-stat {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .optimal-stat:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .optimal-value {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #4fc3f7, #29b6f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 10px 0;
+        }
+
+        .improvement-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 10px;
+            color: #4caf50;
+            font-size: 0.9rem;
+        }
+
+        .arrow-up {
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 10px solid #4caf50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>원신 성유물 효율 계산기</h1>
+        
+        <div class="calculator-grid">
+            <!-- 딜 기댓값 계산기 -->
+            <div class="card">
+                <div class="card-title">딜 기댓값 계산기</div>
+                
+                <div class="mode-toggle">
+                    <button class="mode-btn active" onclick="toggleComparisonMode('single')">단일 계산</button>
+                    <button class="mode-btn" onclick="toggleComparisonMode('compare')">비교 계산</button>
+                </div>
+                
+                <div id="singleMode">
+                    <div class="input-group">
+                        <label>전체 공격력</label>
+                        <input type="number" id="totalAtk" placeholder="예: 2000" min="0" step="1">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>치명타 확률 (%)</label>
+                        <input type="number" id="critRate" placeholder="예: 50" min="0" max="100" step="0.1">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>치명타 피해 (%)</label>
+                        <input type="number" id="critDmg" placeholder="예: 100" min="0" step="0.1">
+                    </div>
+                    
+                    <div class="result-box">
+                        <div class="result-title">딜 기댓값 (100% 계수 기준)</div>
+                        <div class="result-value" id="expectedDmg">0</div>
+                        <div class="stat-bar">
+                            <div class="stat-fill" id="dmgBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-section">
+                        <div class="info-item">
+                            <span>일반 공격 데미지</span>
+                            <span id="normalDmg">0</span>
+                        </div>
+                        <div class="info-item">
+                            <span>치명타 데미지</span>
+                            <span id="criticalDmg">0</span>
+                        </div>
+                        <div class="info-item">
+                            <span>데미지 증가율</span>
+                            <span id="dmgIncrease">0%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="compareMode" style="display: none;">
+                    <div class="comparison-container">
+                        <div class="comparison-section">
+                            <div class="comparison-title">세팅 A</div>
+                            <div class="input-group">
+                                <label>전체 공격력</label>
+                                <input type="number" id="totalAtkA" placeholder="예: 2000" min="0" step="1">
+                            </div>
+                            <div class="input-group">
+                                <label>치명타 확률 (%)</label>
+                                <input type="number" id="critRateA" placeholder="예: 50" min="0" max="100" step="0.1">
+                            </div>
+                            <div class="input-group">
+                                <label>치명타 피해 (%)</label>
+                                <input type="number" id="critDmgA" placeholder="예: 100" min="0" step="0.1">
+                            </div>
+                            <div class="result-box">
+                                <div class="result-title">딜 기댓값</div>
+                                <div class="result-value" id="expectedDmgA">0</div>
+                            </div>
+                        </div>
+                        
+                        <div class="comparison-section">
+                            <div class="comparison-title">세팅 B</div>
+                            <div class="input-group">
+                                <label>전체 공격력</label>
+                                <input type="number" id="totalAtkB" placeholder="예: 2000" min="0" step="1">
+                            </div>
+                            <div class="input-group">
+                                <label>치명타 확률 (%)</label>
+                                <input type="number" id="critRateB" placeholder="예: 50" min="0" max="100" step="0.1">
+                            </div>
+                            <div class="input-group">
+                                <label>치명타 피해 (%)</label>
+                                <input type="number" id="critDmgB" placeholder="예: 100" min="0" step="0.1">
+                            </div>
+                            <div class="result-box">
+                                <div class="result-title">딜 기댓값</div>
+                                <div class="result-value" id="expectedDmgB">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="comparison-result">
+                        <div class="result-title">비교 결과</div>
+                        <div id="comparisonResult"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 스탯 효율 계산기 -->
+            <div class="card">
+                <div class="card-title">스탯 효율 계산기</div>
+                
+                <div class="input-group">
+                    <label>기초 공격력</label>
+                    <input type="number" id="baseAtk" placeholder="예: 1000" min="0" step="1">
+                </div>
+                
+                <div class="input-group">
+                    <label>깡공 (+)</label>
+                    <input type="number" id="flatAtk" placeholder="예: 311" min="0" step="1">
+                </div>
+                
+                <div class="result-box">
+                    <div class="result-title">깡공 효율 점수</div>
+                    <div class="result-value" id="efficiencyScore">0</div>
+                    <div class="efficiency-indicator">
+                        <span>효율성:</span>
+                        <span class="efficiency-badge" id="efficiencyBadge">계산 중...</span>
+                    </div>
+                </div>
+                
+                <div class="info-section">
+                    <div class="info-item">
+                        <span>공격력% 환산</span>
+                        <span id="atkPercentEquiv">0%</span>
+                    </div>
+                    <div class="info-item">
+                        <span>1점당 공격력</span>
+                        <span id="atkPerPoint">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 치명타 최적화 계산기 -->
+            <div class="card">
+                <div class="card-title">치명타 최적화 계산기</div>
+                
+                <div class="input-group">
+                    <label>크리티컬 밸류 (치확×2 + 치피)</label>
+                    <input type="number" id="critValue" placeholder="예: 200" min="0" step="0.1">
+                </div>
+                
+                <div class="result-box">
+                    <div class="result-title">최적 치명타 배분</div>
+                    <div class="crit-optimizer-result">
+                        <div class="optimal-stat">
+                            <div class="result-title">최적 치명타 확률</div>
+                            <div class="optimal-value" id="optimalCR">0%</div>
+                        </div>
+                        <div class="optimal-stat">
+                            <div class="result-title">최적 치명타 피해</div>
+                            <div class="optimal-value" id="optimalCD">0%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-section">
+                    <div class="info-item">
+                        <span>최적 비율</span>
+                        <span id="optimalRatio">1:2</span>
+                    </div>
+                    <div class="info-item">
+                        <span>딜 기댓값 증가</span>
+                        <span id="dmgOptimization">최적화됨</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 성유물 점수 계산기 -->
+            <div class="card">
+                <div class="card-title">성유물 종합 점수</div>
+                
+                <div class="artifact-type-selector">
+                    <button class="type-btn active" onclick="selectArtifactType('normal')">꽃/깃털/성배</button>
+                    <button class="type-btn" onclick="selectArtifactType('special')">시계/왕관</button>
+                </div>
+                
+                <div class="input-group">
+                    <label>치명타 확률 (%)</label>
+                    <input type="number" id="artifactCR" placeholder="예: 10" min="0" step="0.1">
+                </div>
+                
+                <div class="input-group">
+                    <label>치명타 피해 (%)</label>
+                    <input type="number" id="artifactCD" placeholder="예: 20" min="0" step="0.1">
+                </div>
+                
+                <div class="input-group">
+                    <label>공격력 (%)</label>
+                    <input type="number" id="artifactAtkP" placeholder="예: 15" min="0" step="0.1">
+                </div>
+                
+                <div class="input-group">
+                    <label>깡공 (+)</label>
+                    <input type="number" id="artifactFlatAtk" placeholder="예: 50" min="0" step="1">
+                </div>
+                
+                <div class="result-box">
+                    <div class="result-title">성유물 총점</div>
+                    <div class="result-value" id="artifactScore">0</div>
+                    <div class="efficiency-indicator">
+                        <span>등급:</span>
+                        <span class="grade-badge" id="artifactGrade">계산 중...</span>
+                    </div>
+                </div>
+                
+                <div class="info-section">
+                    <div class="info-item">
+                        <span>치명타 점수</span>
+                        <span id="critScore">0</span>
+                    </div>
+                    <div class="info-item">
+                        <span>공격력 점수</span>
+                        <span id="atkScore">0</span>
+                    </div>
+                </div>
+                
+                <div class="note-text">
+                    ※ 원소 마스터리, 원소 충전 효율은 반영되지 않습니다
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let comparisonMode = 'single';
+        let artifactType = 'normal';
+
+        function toggleComparisonMode(mode) {
+            comparisonMode = mode;
+            const singleMode = document.getElementById('singleMode');
+            const compareMode = document.getElementById('compareMode');
+            const modeBtns = document.querySelectorAll('.mode-btn');
+            
+            modeBtns.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (mode === 'single') {
+                singleMode.style.display = 'block';
+                compareMode.style.display = 'none';
+            } else {
+                singleMode.style.display = 'none';
+                compareMode.style.display = 'block';
+            }
+        }
+
+        function selectArtifactType(type) {
+            artifactType = type;
+            const typeBtns = document.querySelectorAll('.type-btn');
+            typeBtns.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            calculateArtifactScore();
+        }
+
+        // 딜 기댓값 계산 (치확 100% 제한 추가)
+        function calculateExpectedDamage() {
+            const totalAtk = parseFloat(document.getElementById('totalAtk').value) || 0;
+            let critRate = parseFloat(document.getElementById('critRate').value) || 0;
+            const critDmg = parseFloat(document.getElementById('critDmg').value) || 0;
+            
+            // 치명타 확률 100% 제한
+            critRate = Math.min(critRate, 100);
+            
+            const normalDamage = totalAtk;
+            const criticalDamage = totalAtk * (1 + critDmg / 100);
+            const expectedDamage = normalDamage * (1 - critRate / 100) + criticalDamage * (critRate / 100);
+            
+            document.getElementById('expectedDmg').textContent = Math.round(expectedDamage).toLocaleString();
+            document.getElementById('normalDmg').textContent = Math.round(normalDamage).toLocaleString();
+            document.getElementById('criticalDmg').textContent = Math.round(criticalDamage).toLocaleString();
+            
+            const damageIncrease = totalAtk > 0 ? ((expectedDamage / totalAtk - 1) * 100).toFixed(1) : 0;
+            document.getElementById('dmgIncrease').textContent = `+${damageIncrease}%`;
+            
+            const maxDmg = totalAtk * 3;
+            const barWidth = Math.min((expectedDamage / maxDmg) * 100, 100);
+            document.getElementById('dmgBar').style.width = `${barWidth}%`;
+        }
+
+        // 비교 모드 계산
+        function calculateComparison() {
+            const totalAtkA = parseFloat(document.getElementById('totalAtkA').value) || 0;
+            let critRateA = parseFloat(document.getElementById('critRateA').value) || 0;
+            const critDmgA = parseFloat(document.getElementById('critDmgA').value) || 0;
+            
+            const totalAtkB = parseFloat(document.getElementById('totalAtkB').value) || 0;
+            let critRateB = parseFloat(document.getElementById('critRateB').value) || 0;
+            const critDmgB = parseFloat(document.getElementById('critDmgB').value) || 0;
+            
+            // 치명타 확률 100% 제한
+            critRateA = Math.min(critRateA, 100);
+            critRateB = Math.min(critRateB, 100);
+            
+            const expectedDmgA = totalAtkA * (1 + (critRateA / 100) * (critDmgA / 100));
+            const expectedDmgB = totalAtkB * (1 + (critRateB / 100) * (critDmgB / 100));
+            
+            document.getElementById('expectedDmgA').textContent = Math.round(expectedDmgA).toLocaleString();
+            document.getElementById('expectedDmgB').textContent = Math.round(expectedDmgB).toLocaleString();
+            
+            const comparisonResult = document.getElementById('comparisonResult');
+            if (expectedDmgA > expectedDmgB) {
+                const diff = ((expectedDmgA / expectedDmgB - 1) * 100).toFixed(1);
+                comparisonResult.innerHTML = `
+                    <div class="winner-badge">세팅 A가 ${diff}% 더 강함</div>
+                `;
+            } else if (expectedDmgB > expectedDmgA) {
+                const diff = ((expectedDmgB / expectedDmgA - 1) * 100).toFixed(1);
+                comparisonResult.innerHTML = `
+                    <div class="winner-badge">세팅 B가 ${diff}% 더 강함</div>
+                `;
+            } else {
+                comparisonResult.innerHTML = `
+                    <div class="winner-badge">두 세팅이 동일함</div>
+                `;
+            }
+        }
+
+        // 스탯 효율 계산 (수정된 기준)
+        function calculateStatEfficiency() {
+            const baseAtk = parseFloat(document.getElementById('baseAtk').value) || 0;
+            const flatAtk = parseFloat(document.getElementById('flatAtk').value) || 0;
+            
+            if (baseAtk === 0) {
+                document.getElementById('efficiencyScore').textContent = '0';
+                document.getElementById('atkPercentEquiv').textContent = '0%';
+                document.getElementById('atkPerPoint').textContent = '0';
+                document.getElementById('efficiencyBadge').textContent = '입력 필요';
+                document.getElementById('efficiencyBadge').className = 'efficiency-badge';
+                return;
+            }
+            
+            const atkPercentEquiv = (flatAtk / baseAtk) * 100;
+            const efficiencyScore = atkPercentEquiv * 2;
+            
+            document.getElementById('efficiencyScore').textContent = efficiencyScore.toFixed(1);
+            document.getElementById('atkPercentEquiv').textContent = `${atkPercentEquiv.toFixed(1)}%`;
+            document.getElementById('atkPerPoint').textContent = efficiencyScore > 0 ? (flatAtk / efficiencyScore).toFixed(1) : '0';
+            
+            // 새로운 효율성 평가 기준
+            const badge = document.getElementById('efficiencyBadge');
+            if (atkPercentEquiv >= 35) {
+                badge.textContent = '매우 높음';
+                badge.className = 'efficiency-badge excellent';
+            } else if (atkPercentEquiv >= 26) {
+                badge.textContent = '높음';
+                badge.className = 'efficiency-badge good';
+            } else if (atkPercentEquiv >= 18 && atkPercentEquiv <= 22) {
+                badge.textContent = '보통';
+                badge.className = 'efficiency-badge average';
+            } else if (atkPercentEquiv < 18) {
+                badge.textContent = '낮음';
+                badge.className = 'efficiency-badge poor';
+            } else {
+                badge.textContent = '준수함';
+                badge.className = 'efficiency-badge good';
+            }
+        }
+
+        // 치명타 최적화 계산
+        function calculateCritOptimization() {
+            const critValue = parseFloat(document.getElementById('critValue').value) || 0;
+            
+            if (critValue === 0) {
+                document.getElementById('optimalCR').textContent = '0%';
+                document.getElementById('optimalCD').textContent = '0%';
+                document.getElementById('optimalRatio').textContent = '1:2';
+                document.getElementById('dmgOptimization').textContent = '입력 필요';
+                return;
+            }
+            
+            // 최적 비율 계산 (치확 100% 제한)
+            let optimalCR = critValue / 3;
+            let optimalCD = (critValue / 3) * 2;
+            
+            if (optimalCR > 100) {
+                optimalCR = 100;
+                optimalCD = critValue - 200; // 치확이 100%일 때 나머지는 모두 치피로
+            }
+            
+            document.getElementById('optimalCR').textContent = `${optimalCR.toFixed(1)}%`;
+            document.getElementById('optimalCD').textContent = `${optimalCD.toFixed(1)}%`;
+            
+            const ratio = optimalCR > 0 ? (optimalCD / optimalCR).toFixed(1) : '0';
+            document.getElementById('optimalRatio').textContent = `1:${ratio}`;
+            document.getElementById('dmgOptimization').textContent = '최적 배분 완료';
+        }
+
+        // 성유물 점수 계산 (새로운 공식)
+        function calculateArtifactScore() {
+            const cr = parseFloat(document.getElementById('artifactCR').value) || 0;
+            const cd = parseFloat(document.getElementById('artifactCD').value) || 0;
+            const atkP = parseFloat(document.getElementById('artifactAtkP').value) || 0;
+            const flatAtk = parseFloat(document.getElementById('artifactFlatAtk').value) || 0;
+            
+            // 새로운 점수 계산 공식
+            const critScore = cr * 3 + cd * 1.5;
+            const atkPScore = atkP * 2;
+            
+            // 깡공은 기초공 1000 기준으로 계산
+            const baseAtkEstimate = 1000;
+            const flatAtkScore = (flatAtk / baseAtkEstimate * 100) * 2;
+            
+            const totalScore = critScore + atkPScore + flatAtkScore;
+            
+            document.getElementById('artifactScore').textContent = totalScore.toFixed(1);
+            document.getElementById('critScore').textContent = critScore.toFixed(1);
+            document.getElementById('atkScore').textContent = (atkPScore + flatAtkScore).toFixed(1);
+            
+            // 등급 평가
+            const badge = document.getElementById('artifactGrade');
+            let threshold = artifactType === 'normal' ? 0 : -11.7;
+            
+            if (totalScore >= 85 + threshold) {
+                badge.textContent = 'MASTER';
+                badge.className = 'grade-badge grade-MASTER';
+            } else if (totalScore >= 80 + threshold) {
+                badge.textContent = 'SSS';
+                badge.className = 'grade-badge grade-SSS';
+            } else if (totalScore >= 77.5 + threshold) {
+                badge.textContent = 'SS+';
+                badge.className = 'grade-badge grade-SS-plus';
+            } else if (totalScore >= 75 + threshold) {
+                badge.textContent = 'SS';
+                badge.className = 'grade-badge grade-SS';
+            } else if (totalScore >= 72.5 + threshold) {
+                badge.textContent = 'S+';
+                badge.className = 'grade-badge grade-S-plus';
+            } else if (totalScore >= 70 + threshold) {
+                badge.textContent = 'S (종결)';
+                badge.className = 'grade-badge grade-S';
+            } else if (totalScore >= 67.5 + threshold) {
+                badge.textContent = 'A+';
+                badge.className = 'grade-badge grade-A-plus';
+            } else if (totalScore >= 65 + threshold) {
+                badge.textContent = 'A';
+                badge.className = 'grade-badge grade-A';
+            } else if (totalScore >= 60 + threshold) {
+                badge.textContent = 'B+';
+                badge.className = 'grade-badge grade-B-plus';
+            } else if (totalScore >= 55 + threshold) {
+                badge.textContent = 'B';
+                badge.className = 'grade-badge grade-B';
+            } else if (totalScore >= 50 + threshold) {
+                badge.textContent = 'C+';
+                badge.className = 'grade-badge grade-C-plus';
+            } else if (totalScore >= 45 + threshold) {
+                badge.textContent = 'C';
+                badge.className = 'grade-badge grade-C';
+            } else {
+                badge.textContent = '가치 없음';
+                badge.className = 'grade-badge poor';
+            }
+        }
+
+        // 이벤트 리스너
+        document.getElementById('totalAtk').addEventListener('input', calculateExpectedDamage);
+        document.getElementById('critRate').addEventListener('input', calculateExpectedDamage);
+        document.getElementById('critDmg').addEventListener('input', calculateExpectedDamage);
+        
+        document.getElementById('totalAtkA').addEventListener('input', calculateComparison);
+        document.getElementById('critRateA').addEventListener('input', calculateComparison);
+        document.getElementById('critDmgA').addEventListener('input', calculateComparison);
+        document.getElementById('totalAtkB').addEventListener('input', calculateComparison);
+        document.getElementById('critRateB').addEventListener('input', calculateComparison);
+        document.getElementById('critDmgB').addEventListener('input', calculateComparison);
+        
+        document.getElementById('baseAtk').addEventListener('input', calculateStatEfficiency);
+        document.getElementById('flatAtk').addEventListener('input', calculateStatEfficiency);
+        
+        document.getElementById('critValue').addEventListener('input', calculateCritOptimization);
+        
+        document.getElementById('artifactCR').addEventListener('input', calculateArtifactScore);
+        document.getElementById('artifactCD').addEventListener('input', calculateArtifactScore);
+        document.getElementById('artifactAtkP').addEventListener('input', calculateArtifactScore);
+        document.getElementById('artifactFlatAtk').addEventListener('input', calculateArtifactScore);
+        
+        // 초기 계산
+        calculateExpectedDamage();
+        calculateStatEfficiency();
+        calculateCritOptimization();
+        calculateArtifactScore();
+    </script>
+</body>
+</html>
