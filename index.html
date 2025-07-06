@@ -64,27 +64,36 @@
         .character-type-selector {
             display: flex;
             justify-content: center;
-            gap: 15px;
             margin-bottom: 30px;
-            flex-wrap: wrap;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 30px;
+            padding: 5px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .char-type-btn {
+            flex: 1;
             padding: 12px 24px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 30px;
+            background: transparent;
+            border: none;
+            border-radius: 25px;
             color: rgba(255, 255, 255, 0.7);
             cursor: pointer;
             transition: all 0.3s ease;
             font-size: 0.95rem;
             font-weight: 500;
+            position: relative;
+        }
+
+        .char-type-btn:hover {
+            color: rgba(255, 255, 255, 0.9);
         }
 
         .char-type-btn.active {
             background: linear-gradient(135deg, #ff1493, #ff69b4);
             color: white;
-            border-color: transparent;
             box-shadow: 0 4px 20px rgba(255, 20, 147, 0.4);
         }
 
@@ -146,10 +155,14 @@
         }
 
         .storage-grade {
-            font-size: 1.1rem;
+            font-size: 0.95rem;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            position: relative;
         }
 
         .storage-grade.grade-GODLY {
@@ -157,72 +170,79 @@
                 #ff0080, #ff8c00, #ffd700, #00ff00, 
                 #00ffff, #0080ff, #8000ff, #ff0080);
             background-size: 400% 400%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: white;
             animation: rainbowShift 3s linear infinite;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
         }
 
         .storage-grade.grade-SSS {
             background: linear-gradient(135deg, #6a1b9a, #8e24aa, #ab47bc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: white;
             animation: shimmer 1.5s ease infinite;
+            box-shadow: 0 0 15px rgba(142, 36, 170, 0.4);
         }
 
         .storage-grade.grade-SS-plus {
             background: linear-gradient(135deg, #ff1744, #ff5252);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: white;
             animation: shimmer 1.8s ease infinite;
+            box-shadow: 0 0 15px rgba(255, 23, 68, 0.4);
         }
 
         .storage-grade.grade-SS {
             background: linear-gradient(135deg, #e91e63, #f06292);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: white;
             animation: shimmer 2s ease infinite;
+            box-shadow: 0 0 15px rgba(233, 30, 99, 0.4);
         }
 
         .storage-grade.grade-S-plus {
             background: linear-gradient(135deg, #ffd700, #ffc107, #ff9800);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #333;
             animation: shimmer 2.5s ease infinite;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
         }
 
         .storage-grade.grade-S {
             background: linear-gradient(135deg, #ffd700, #ffb700);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #333;
             animation: shimmer 3s ease infinite;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
         }
 
         .storage-grade.grade-A-plus {
-            color: #ba68c8;
+            background: #ba68c8;
+            color: white;
         }
 
         .storage-grade.grade-A {
-            color: #ab47bc;
+            background: #ab47bc;
+            color: white;
         }
 
         .storage-grade.grade-B-plus {
-            color: #29b6f6;
+            background: #29b6f6;
+            color: white;
         }
 
         .storage-grade.grade-B {
-            color: #42a5f5;
+            background: #42a5f5;
+            color: white;
         }
 
         .storage-grade.grade-C-plus {
-            color: #7986cb;
+            background: #7986cb;
+            color: white;
         }
 
         .storage-grade.grade-C {
-            color: #607d8b;
+            background: #607d8b;
+            color: white;
         }
 
         .storage-grade.grade-poor {
-            color: #f44336;
+            background: #f44336;
+            color: white;
         }
 
         .delete-btn {
@@ -242,9 +262,9 @@
         }
 
         .storage-stats {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: rgba(255, 255, 255, 0.7);
-            line-height: 1.8;
+            line-height: 1.6;
         }
 
         .storage-type {
@@ -254,22 +274,33 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            font-size: 0.85rem;
         }
 
         .storage-score {
             background: rgba(255, 20, 147, 0.1);
             padding: 2px 8px;
             border-radius: 12px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: #ff69b4;
             font-weight: 600;
+        }
+
+        .storage-optional {
+            background: rgba(79, 195, 247, 0.1);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            color: #4fc3f7;
+            font-weight: 500;
         }
 
         .storage-stat-item {
             display: flex;
             justify-content: space-between;
-            padding: 4px 0;
+            padding: 3px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.8rem;
         }
 
         .storage-stat-item:last-child {
@@ -865,33 +896,86 @@
             cursor: pointer;
             transition: all 0.3s ease;
             font-size: 0.85rem;
+            position: relative;
+            user-select: none;
+        }
+
+        .stat-toggle:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
         }
 
         .stat-toggle.active {
-            background: linear-gradient(135deg, #4caf50, #45a049);
+            background: linear-gradient(135deg, #ff1493, #ff69b4);
             border-color: transparent;
             color: white;
+            box-shadow: 0 3px 15px rgba(255, 20, 147, 0.3);
         }
 
         .stat-toggle input {
-            display: none;
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+
+        .stat-checkbox {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .stat-toggle.active .stat-checkbox {
+            background: white;
+            border-color: white;
+        }
+
+        .stat-toggle.active .stat-checkbox::after {
+            content: '✓';
+            position: absolute;
+            top: -2px;
+            left: 2px;
+            color: #ff1493;
+            font-weight: bold;
+            font-size: 12px;
         }
 
         .dual-score {
             display: flex;
-            gap: 20px;
+            gap: 30px;
             align-items: center;
             justify-content: center;
         }
 
         .score-item {
             text-align: center;
+            padding: 10px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .score-item:first-child {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .score-item:last-child {
+            border: 1px solid rgba(255, 20, 147, 0.2);
+            background: rgba(255, 20, 147, 0.05);
         }
 
         .score-label {
             font-size: 0.85rem;
             color: rgba(255, 255, 255, 0.6);
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+        }
+
+        .score-label.optional {
+            color: rgba(255, 105, 180, 0.8);
         }
 
         .save-btn {
@@ -1294,14 +1378,16 @@
                     </div>
                     
                     <div class="optional-stats">
-                        <label class="stat-toggle" onclick="toggleOptionalStat('er')">
+                        <div class="stat-toggle" onclick="toggleOptionalStat('er')">
                             <input type="checkbox" id="erToggle">
-                            <span>원소 충전 효율</span>
-                        </label>
-                        <label class="stat-toggle" onclick="toggleOptionalStat('em')">
+                            <span class="stat-checkbox"></span>
+                            <span>원소 충전 효율 포함</span>
+                        </div>
+                        <div class="stat-toggle" onclick="toggleOptionalStat('em')">
                             <input type="checkbox" id="emToggle">
-                            <span>원소 마스터리</span>
-                        </label>
+                            <span class="stat-checkbox"></span>
+                            <span>원소 마스터리 포함</span>
+                        </div>
                     </div>
                     
                     <div class="input-group">
@@ -1869,28 +1955,41 @@
         function calculateArtifactScore() {
             const cr = parseFloat(document.getElementById('artifactCR').value) || 0;
             const cd = parseFloat(document.getElementById('artifactCD').value) || 0;
-            const atkP = parseFloat(document.getElementById('artifactAtkP').value) || 0;
-            const flatAtk = parseFloat(document.getElementById('artifactFlatAtk').value) || 0;
+            const statP = parseFloat(document.getElementById('artifactAtkP').value) || 0;
+            const flatStat = parseFloat(document.getElementById('artifactFlatAtk').value) || 0;
             
+            // 치명타 점수 (치확 3, 치피 1.5)
             const critScore = cr * 3 + cd * 1.5;
-            const atkPScore = atkP * 2;
             
-            const baseAtkEstimate = 1000;
-            const flatAtkScore = (flatAtk / baseAtkEstimate * 100) * 2;
+            // 메인 스탯 점수 계산
+            let statPScore = 0;
+            let flatStatScore = 0;
             
-            let totalScore = critScore + atkPScore + flatAtkScore;
+            if (characterType === 'atk') {
+                statPScore = statP * 2; // 공퍼 5.8% 기준
+                const baseAtkEstimate = 1000;
+                flatStatScore = (flatStat / 19) * 3.8; // 깡공 19 기준
+            } else if (characterType === 'hp') {
+                statPScore = statP * 2; // 체퍼 5.8% 기준
+                flatStatScore = (flatStat / 299) * 3.8; // 깡체 299 기준
+            } else if (characterType === 'def') {
+                statPScore = statP * 1.59; // 방퍼 7.3% 기준 (11.6/7.3)
+                flatStatScore = (flatStat / 23) * 3.8; // 깡방 23 기준
+            }
+            
+            let totalScore = critScore + statPScore + flatStatScore;
             let optionalScore = 0;
             
             // 선택적 스탯 계산
             if (optionalStats.er) {
                 const er = parseFloat(document.getElementById('artifactER')?.value) || 0;
-                const erScore = (er / 6.5) * 11.7;
+                const erScore = er * 1.78; // 11.6/6.5
                 optionalScore += erScore;
             }
             
             if (optionalStats.em) {
                 const em = parseFloat(document.getElementById('artifactEM')?.value) || 0;
-                const emScore = (em / 23) * 11.7;
+                const emScore = (em / 23) * 11.6; // 원마 23 기준
                 optionalScore += emScore;
             }
             
@@ -1906,7 +2005,7 @@
                             <div class="result-value">${totalScore.toFixed(1)}</div>
                         </div>
                         <div class="score-item">
-                            <div class="score-label">전체 점수</div>
+                            <div class="score-label optional">원충/원마 포함</div>
                             <div class="result-value">${totalWithOptional.toFixed(1)}</div>
                         </div>
                     </div>
@@ -1916,7 +2015,7 @@
             }
             
             document.getElementById('critScore').textContent = critScore.toFixed(1);
-            document.getElementById('atkScore').textContent = (atkPScore + flatAtkScore).toFixed(1);
+            document.getElementById('atkScore').textContent = (statPScore + flatStatScore).toFixed(1);
             
             // 선택적 점수 표시
             const optionalScoresDiv = document.getElementById('optionalScores');
@@ -1924,7 +2023,7 @@
             
             if (optionalStats.er) {
                 const er = parseFloat(document.getElementById('artifactER')?.value) || 0;
-                const erScore = (er / 6.5) * 11.7;
+                const erScore = er * 1.78;
                 optionalHTML += `
                     <div class="info-item">
                         <span>원충 점수</span>
@@ -1935,7 +2034,7 @@
             
             if (optionalStats.em) {
                 const em = parseFloat(document.getElementById('artifactEM')?.value) || 0;
-                const emScore = (em / 23) * 11.7;
+                const emScore = (em / 23) * 11.6;
                 optionalHTML += `
                     <div class="info-item">
                         <span>원마 점수</span>
@@ -2003,25 +2102,35 @@
         function saveToStorage() {
             const cr = parseFloat(document.getElementById('artifactCR').value) || 0;
             const cd = parseFloat(document.getElementById('artifactCD').value) || 0;
-            const atkP = parseFloat(document.getElementById('artifactAtkP').value) || 0;
-            const flatAtk = parseFloat(document.getElementById('artifactFlatAtk').value) || 0;
+            const statP = parseFloat(document.getElementById('artifactAtkP').value) || 0;
+            const flatStat = parseFloat(document.getElementById('artifactFlatAtk').value) || 0;
             
-            let stats = `치확: ${cr}%, 치피: ${cd}%`;
-            stats += `\n${statNames[characterType].percent}: ${atkP}%`;
-            stats += `\n${statNames[characterType].flat}: ${flatAtk}`;
+            let stats = [];
+            if (cr > 0) stats.push(`치확: ${cr}%`);
+            if (cd > 0) stats.push(`치피: ${cd}%`);
+            if (statP > 0) stats.push(`${statNames[characterType].percent}: ${statP}%`);
+            if (flatStat > 0) stats.push(`${statNames[characterType].flat}: ${flatStat}`);
             
+            let hasOptional = false;
             if (optionalStats.er) {
                 const er = parseFloat(document.getElementById('artifactER')?.value) || 0;
-                stats += `\n원충: ${er}%`;
+                if (er > 0) {
+                    stats.push(`원충: ${er}%`);
+                    hasOptional = true;
+                }
             }
             
             if (optionalStats.em) {
                 const em = parseFloat(document.getElementById('artifactEM')?.value) || 0;
-                stats += `\n원마: ${em}`;
+                if (em > 0) {
+                    stats.push(`원마: ${em}`);
+                    hasOptional = true;
+                }
             }
             
             const grade = document.getElementById('artifactGrade').textContent;
-            const score = document.querySelector('#scoreDisplay .result-value:last-child').textContent;
+            const scoreElements = document.querySelectorAll('#scoreDisplay .result-value');
+            const score = scoreElements[scoreElements.length - 1].textContent;
             const type = artifactType === 'normal' ? '꽃/깃털/성배' : '시계/왕관';
             
             const artifact = {
@@ -2029,7 +2138,8 @@
                 type: type,
                 grade: grade,
                 score: score,
-                stats: stats,
+                stats: stats.join('\n'),
+                hasOptional: hasOptional,
                 characterType: characterType
             };
             
@@ -2068,6 +2178,8 @@
                     }
                 });
                 
+                const optionalBadge = item.hasOptional ? '<span class="storage-optional">원충/원마</span>' : '';
+                
                 html += `
                     <div class="storage-item">
                         <div class="storage-item-header">
@@ -2078,6 +2190,7 @@
                             <div class="storage-type">
                                 <span>${item.type}</span>
                                 <span class="storage-score">${item.score}점</span>
+                                ${optionalBadge}
                             </div>
                             ${statsHtml}
                         </div>
