@@ -295,12 +295,41 @@
             font-weight: 500;
         }
 
+        .storage-score-details {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+
+        .score-detail {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .score-detail.crit {
+            background: rgba(255, 20, 147, 0.1);
+            color: #ff69b4;
+        }
+
+        .score-detail.main {
+            background: rgba(79, 195, 247, 0.1);
+            color: #4fc3f7;
+        }
+
         .storage-stat-item {
             display: flex;
             justify-content: space-between;
             padding: 3px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             font-size: 0.8rem;
+        }
+
+        .storage-stat-item:last-child {
+            border-bottom: none;
         }
 
         .storage-stat-item:last-child {
@@ -1331,9 +1360,28 @@
                 <div class="card">
                     <div class="card-title">치명타 최적화 계산기</div>
                     
-                    <div class="input-group">
-                        <label>크리티컬 밸류 (치확×2 + 치피)</label>
-                        <input type="number" id="critValue" placeholder="예: 200" min="0" step="0.1">
+                    <div class="mode-toggle">
+                        <button class="mode-btn active" onclick="toggleCritInputMode('separate')">개별 입력</button>
+                        <button class="mode-btn" onclick="toggleCritInputMode('cv')">크리티컬 밸류</button>
+                    </div>
+                    
+                    <div id="separateInput">
+                        <div class="input-group">
+                            <label>현재 치명타 확률 (%)</label>
+                            <input type="number" id="currentCR" placeholder="예: 50" min="0" max="100" step="0.1">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label>현재 치명타 피해 (%)</label>
+                            <input type="number" id="currentCD" placeholder="예: 100" min="0" step="0.1">
+                        </div>
+                    </div>
+                    
+                    <div id="cvInput" style="display: none;">
+                        <div class="input-group">
+                            <label>크리티컬 밸류 (치확×2 + 치피)</label>
+                            <input type="number" id="critValue" placeholder="예: 200" min="0" step="0.1">
+                        </div>
                     </div>
                     
                     <div class="result-box">
@@ -1462,6 +1510,7 @@
         let artifactType = 'normal';
         let characterType = 'atk';
         let chartMode = 'simple';
+        let critInputMode = 'separate';
         let optionalStats = {
             er: false,
             em: false
@@ -1710,9 +1759,9 @@
             const atkPercentEquiv = (flatAtk / baseAtk) * 100;
             const efficiencyScore = atkPercentEquiv * 2;
             
-            // 최대 강화 수치 대비 효율 계산
+            // 최대 강화 수치 대비 효율 계산 (최대값 기준)
             const maxFlatEquivPercent = (stats.maxFlat / baseAtk) * 100;
-            const percentEfficiency = (atkPercentEquiv / stats.maxPercent) * 100;
+            const percentEfficiency = (maxFlatEquivPercent / stats.maxPercent) * 100;
             
             document.getElementById('efficiencyScore').textContent = efficiencyScore.toFixed(1);
             document.getElementById('atkPercentEquiv').textContent = `${atkPercentEquiv.toFixed(1)}%`;
@@ -1734,9 +1783,37 @@
             }
         }
 
+        function toggleCritInputMode(mode) {
+            critInputMode = mode;
+            const separateInput = document.getElementById('separateInput');
+            const cvInput = document.getElementById('cvInput');
+            const modeBtns = event.target.parentElement.querySelectorAll('.mode-btn');
+            
+            modeBtns.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (mode === 'separate') {
+                separateInput.style.display = 'block';
+                cvInput.style.display = 'none';
+            } else {
+                separateInput.style.display = 'none';
+                cvInput.style.display = 'block';
+            }
+            
+            calculateCritOptimization();
+        }
+
         // 치명타 최적화 계산 (수정)
         function calculateCritOptimization() {
-            const critValue = parseFloat(document.getElementById('critValue').value) || 0;
+            let critValue = 0;
+            
+            if (critInputMode === 'separate') {
+                const cr = parseFloat(document.getElementById('currentCR').value) || 0;
+                const cd = parseFloat(document.getElementById('currentCD').value) || 0;
+                critValue = cr * 2 + cd;
+            } else {
+                critValue = parseFloat(document.getElementById('critValue').value) || 0;
+            }
             
             if (critValue === 0) {
                 document.getElementById('optimalCR').textContent = '0%';
@@ -1748,7 +1825,6 @@
             }
             
             // 크리티컬 밸류를 치피 기준으로 환산
-            // CV = CR*2 + CD이므로 치피 기준 100이면 최적 배분은 25/50
             let optimalCR = critValue / 4;
             let optimalCD = critValue / 2;
             
@@ -1929,14 +2005,17 @@
                     
                     if (cd >= 50) {
                         const efficiency = 1 + (cr / 100) * (cd / 100);
+                        const maxEfficiencyValue = 1 + (optimalCR / 100) * ((critValue - optimalCR * 2) / 100);
+                        const efficiencyPercent = (efficiency / maxEfficiencyValue * 100).toFixed(1);
                         
                         tooltip.innerHTML = `
                             치확: ${cr.toFixed(1)}%<br>
                             치피: ${cd.toFixed(1)}%<br>
-                            효율: ${efficiency.toFixed(3)}
+                            딜 효율: ${efficiency.toFixed(3)}<br>
+                            최적 대비: ${efficiencyPercent}%
                         `;
                         tooltip.style.left = `${x + 10}px`;
-                        tooltip.style.top = `${y - 40}px`;
+                        tooltip.style.top = `${y - 60}px`;
                         tooltip.style.opacity = '1';
                     } else {
                         tooltip.style.opacity = '0';
@@ -2105,6 +2184,38 @@
             const statP = parseFloat(document.getElementById('artifactAtkP').value) || 0;
             const flatStat = parseFloat(document.getElementById('artifactFlatAtk').value) || 0;
             
+            // 점수 계산
+            const critScore = cr * 3 + cd * 1.5;
+            let statPScore = 0;
+            let flatStatScore = 0;
+            
+            if (characterType === 'atk') {
+                statPScore = statP * 2;
+                flatStatScore = (flatStat / 19) * 3.8;
+            } else if (characterType === 'hp') {
+                statPScore = statP * 2;
+                flatStatScore = (flatStat / 299) * 3.8;
+            } else if (characterType === 'def') {
+                statPScore = statP * 1.59;
+                flatStatScore = (flatStat / 23) * 3.8;
+            }
+            
+            let optionalScore = 0;
+            let erScore = 0;
+            let emScore = 0;
+            
+            if (optionalStats.er) {
+                const er = parseFloat(document.getElementById('artifactER')?.value) || 0;
+                erScore = er * 1.78;
+                optionalScore += erScore;
+            }
+            
+            if (optionalStats.em) {
+                const em = parseFloat(document.getElementById('artifactEM')?.value) || 0;
+                emScore = (em / 23) * 11.6;
+                optionalScore += emScore;
+            }
+            
             let stats = [];
             if (cr > 0) stats.push(`치확: ${cr}%`);
             if (cd > 0) stats.push(`치피: ${cd}%`);
@@ -2140,7 +2251,13 @@
                 score: score,
                 stats: stats.join('\n'),
                 hasOptional: hasOptional,
-                characterType: characterType
+                characterType: characterType,
+                scores: {
+                    crit: critScore.toFixed(1),
+                    main: (statPScore + flatStatScore).toFixed(1),
+                    er: erScore.toFixed(1),
+                    em: emScore.toFixed(1)
+                }
             };
             
             artifactStorage.push(artifact);
@@ -2180,6 +2297,27 @@
                 
                 const optionalBadge = item.hasOptional ? '<span class="storage-optional">원충/원마</span>' : '';
                 
+                // 점수 상세 표시
+                let scoreDetails = '';
+                if (item.scores) {
+                    scoreDetails = '<div class="storage-score-details">';
+                    if (parseFloat(item.scores.crit) > 0) {
+                        scoreDetails += `<span class="score-detail crit">치명타 ${item.scores.crit}</span>`;
+                    }
+                    if (parseFloat(item.scores.main) > 0) {
+                        const mainStatName = item.characterType === 'atk' ? '공격력' : 
+                                           item.characterType === 'hp' ? '체력' : '방어력';
+                        scoreDetails += `<span class="score-detail main">${mainStatName} ${item.scores.main}</span>`;
+                    }
+                    if (parseFloat(item.scores.er) > 0) {
+                        scoreDetails += `<span class="score-detail optional">원충 ${item.scores.er}</span>`;
+                    }
+                    if (parseFloat(item.scores.em) > 0) {
+                        scoreDetails += `<span class="score-detail optional">원마 ${item.scores.em}</span>`;
+                    }
+                    scoreDetails += '</div>';
+                }
+                
                 html += `
                     <div class="storage-item">
                         <div class="storage-item-header">
@@ -2192,6 +2330,7 @@
                                 <span class="storage-score">${item.score}점</span>
                                 ${optionalBadge}
                             </div>
+                            ${scoreDetails}
                             ${statsHtml}
                         </div>
                     </div>
@@ -2243,6 +2382,8 @@
         document.getElementById('baseAtk').addEventListener('input', calculateStatEfficiency);
         document.getElementById('flatAtk').addEventListener('input', calculateStatEfficiency);
         
+        document.getElementById('currentCR').addEventListener('input', calculateCritOptimization);
+        document.getElementById('currentCD').addEventListener('input', calculateCritOptimization);
         document.getElementById('critValue').addEventListener('input', calculateCritOptimization);
         
         document.getElementById('artifactCR').addEventListener('input', calculateArtifactScore);
