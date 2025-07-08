@@ -46,6 +46,7 @@
         h1 {
             text-align: center;
             margin-bottom: 20px;
+            margin-top: 10px;
             font-size: 2.75rem;
             font-weight: 800;
             background: linear-gradient(135deg, #ff1493 0%, #ff69b4 25%, #ff1744 50%, #ff4569 75%, #ff1493 100%);
@@ -62,15 +63,20 @@
         }
 
         .character-type-selector {
+            position: sticky;
+            top: 0;
+            z-index: 100;
             display: flex;
             justify-content: center;
             margin-bottom: 30px;
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(10px);
             border-radius: 30px;
             padding: 5px;
             max-width: 600px;
             margin-left: auto;
             margin-right: auto;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
         }
 
         .char-type-btn {
@@ -1081,8 +1087,13 @@
             }
 
             .character-type-selector {
-                gap: 10px;
+                position: sticky;
+                top: 0;
+                z-index: 100;
                 margin-bottom: 20px;
+                background: rgba(10, 10, 15, 0.95);
+                backdrop-filter: blur(10px);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
             }
 
             .char-type-btn {
@@ -1406,12 +1417,12 @@
                     
                     <div class="info-section">
                         <div class="info-item">
-                            <span>최적 비율</span>
-                            <span id="optimalRatio">1:2</span>
+                            <span id="efficiencyLabel">현재 효율</span>
+                            <span id="currentEfficiency">-</span>
                         </div>
                         <div class="info-item">
-                            <span>딜 기댓값 (공격력 1000 기준)</span>
-                            <span id="optimalDmgValue">0</span>
+                            <span>최적 비율</span>
+                            <span id="optimalRatio">1:2</span>
                         </div>
                     </div>
                 </div>
@@ -1649,6 +1660,11 @@
             }
             
             container.innerHTML = html;
+            
+            // 화살표 키 네비게이션 재설정
+            setTimeout(() => {
+                setupArrowKeyNavigation();
+            }, 100);
         }
 
         function updateGradeGuide() {
@@ -1806,11 +1822,13 @@
         // 치명타 최적화 계산 (수정)
         function calculateCritOptimization() {
             let critValue = 0;
+            let currentCR = 0;
+            let currentCD = 0;
             
             if (critInputMode === 'separate') {
-                const cr = parseFloat(document.getElementById('currentCR').value) || 0;
-                const cd = parseFloat(document.getElementById('currentCD').value) || 0;
-                critValue = cr * 2 + cd;
+                currentCR = parseFloat(document.getElementById('currentCR').value) || 0;
+                currentCD = parseFloat(document.getElementById('currentCD').value) || 0;
+                critValue = currentCR * 2 + currentCD;
             } else {
                 critValue = parseFloat(document.getElementById('critValue').value) || 0;
             }
@@ -1819,7 +1837,8 @@
                 document.getElementById('optimalCR').textContent = '0%';
                 document.getElementById('optimalCD').textContent = '0%';
                 document.getElementById('optimalRatio').textContent = '1:2';
-                document.getElementById('optimalDmgValue').textContent = '0';
+                document.getElementById('currentEfficiency').textContent = '-';
+                document.getElementById('efficiencyLabel').textContent = '현재 효율';
                 drawCritChart(0, 0);
                 return;
             }
@@ -1845,9 +1864,18 @@
             const ratio = optimalCR > 0 ? (optimalCD / optimalCR).toFixed(1) : '0';
             document.getElementById('optimalRatio').textContent = `1:${ratio}`;
             
-            // 딜 기댓값 계산 (공격력 1000 기준)
-            const optimalDmg = 1000 * (1 + (optimalCR / 100) * (optimalCD / 100));
-            document.getElementById('optimalDmgValue').textContent = Math.round(optimalDmg).toLocaleString();
+            // 현재 효율 계산 (개별 입력 모드일 때만)
+            if (critInputMode === 'separate' && currentCR > 0 && currentCD > 0) {
+                const currentEfficiency = 1 + (currentCR / 100) * (currentCD / 100);
+                const optimalEfficiency = 1 + (optimalCR / 100) * (optimalCD / 100);
+                const efficiencyPercent = (currentEfficiency / optimalEfficiency * 100).toFixed(1);
+                
+                document.getElementById('efficiencyLabel').textContent = '현재 입력값 효율';
+                document.getElementById('currentEfficiency').textContent = `${efficiencyPercent}%`;
+            } else {
+                document.getElementById('efficiencyLabel').textContent = '최적 효율';
+                document.getElementById('currentEfficiency').textContent = '100%';
+            }
             
             drawCritChart(critValue, optimalCR);
         }
@@ -1857,11 +1885,8 @@
             const toggle = document.querySelector('.chart-toggle');
             toggle.textContent = chartMode === 'simple' ? '상세 모드' : '간단 모드';
             
-            const critValue = parseFloat(document.getElementById('critValue').value) || 0;
-            if (critValue > 0) {
-                const optimalCR = Math.min(critValue / 4, 100);
-                drawCritChart(critValue, optimalCR);
-            }
+            // 현재 크리티컬 밸류 다시 계산하여 차트 다시 그리기
+            calculateCritOptimization();
         }
 
         function drawCritChart(critValue, optimalCR) {
@@ -2014,8 +2039,25 @@
                             딜 효율: ${efficiency.toFixed(3)}<br>
                             최적 대비: ${efficiencyPercent}%
                         `;
-                        tooltip.style.left = `${x + 10}px`;
-                        tooltip.style.top = `${y - 60}px`;
+                        
+                        // 툴팁 위치 조정 (화면 경계 체크)
+                        const tooltipWidth = 150;
+                        const tooltipHeight = 80;
+                        let tooltipX = x + 10;
+                        let tooltipY = y - tooltipHeight - 10;
+                        
+                        // 상단 경계 체크
+                        if (tooltipY < 0) {
+                            tooltipY = y + 10;
+                        }
+                        
+                        // 우측 경계 체크
+                        if (tooltipX + tooltipWidth > canvas.width) {
+                            tooltipX = x - tooltipWidth - 10;
+                        }
+                        
+                        tooltip.style.left = `${tooltipX}px`;
+                        tooltip.style.top = `${tooltipY}px`;
                         tooltip.style.opacity = '1';
                     } else {
                         tooltip.style.opacity = '0';
@@ -2262,6 +2304,25 @@
             
             artifactStorage.push(artifact);
             updateStorageDisplay();
+            
+            // 입력값 초기화
+            document.getElementById('artifactCR').value = '';
+            document.getElementById('artifactCD').value = '';
+            document.getElementById('artifactAtkP').value = '';
+            document.getElementById('artifactFlatAtk').value = '';
+            
+            if (optionalStats.er) {
+                const erInput = document.getElementById('artifactER');
+                if (erInput) erInput.value = '';
+            }
+            
+            if (optionalStats.em) {
+                const emInput = document.getElementById('artifactEM');
+                if (emInput) emInput.value = '';
+            }
+            
+            // 점수 재계산하여 UI 업데이트
+            calculateArtifactScore();
         }
 
         function deleteFromStorage(id) {
@@ -2391,6 +2452,51 @@
         document.getElementById('artifactAtkP').addEventListener('input', calculateArtifactScore);
         document.getElementById('artifactFlatAtk').addEventListener('input', calculateArtifactScore);
         
+        // 화살표 키 네비게이션 설정
+        function setupArrowKeyNavigation() {
+            const inputs = document.querySelectorAll('input[type="number"]');
+            
+            inputs.forEach((input, index) => {
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        // 이전 입력 필드로 이동
+                        if (index > 0) {
+                            let prevIndex = index - 1;
+                            let prevInput = inputs[prevIndex];
+                            
+                            // 숨겨진 입력 필드 건너뛰기
+                            while (prevIndex > 0 && (prevInput.offsetParent === null || prevInput.style.display === 'none')) {
+                                prevIndex--;
+                                prevInput = inputs[prevIndex];
+                            }
+                            
+                            if (prevInput.offsetParent !== null && prevInput.style.display !== 'none') {
+                                prevInput.focus();
+                            }
+                        }
+                    } else if (e.key === 'ArrowDown' || e.key === 'Enter') {
+                        e.preventDefault();
+                        // 다음 입력 필드로 이동
+                        if (index < inputs.length - 1) {
+                            let nextIndex = index + 1;
+                            let nextInput = inputs[nextIndex];
+                            
+                            // 숨겨진 입력 필드 건너뛰기
+                            while (nextIndex < inputs.length - 1 && (nextInput.offsetParent === null || nextInput.style.display === 'none')) {
+                                nextIndex++;
+                                nextInput = inputs[nextIndex];
+                            }
+                            
+                            if (nextInput && nextInput.offsetParent !== null && nextInput.style.display !== 'none') {
+                                nextInput.focus();
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
         // 초기 계산
         updateLabels();
         updateGradeGuide();
@@ -2398,6 +2504,7 @@
         calculateStatEfficiency();
         calculateCritOptimization();
         calculateArtifactScore();
+        setupArrowKeyNavigation();
     </script>
 </body>
 </html>
