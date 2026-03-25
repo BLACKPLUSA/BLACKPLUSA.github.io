@@ -1829,10 +1829,6 @@ function renderCPM() {
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
-
-  const trs = document.querySelectorAll('#cpmPanel .cpm-tbl tbody tr');
-  const idx = LVS.indexOf(S.curLv);
-  if (trs[idx]) setTimeout(() => trs[idx].scrollIntoView({ block:'center', behavior:'smooth' }), 80);
 }
 
 // ═══════════════════════════════════════════════════════
