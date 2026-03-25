@@ -1923,7 +1923,7 @@ function calcMoveDps(p, lv, m) {
 }
 
 function calcMoveTdo(p, lv, m) {
-  return calcMoveDps(p, lv, m) * effHp(p, lv) * effDef(p, lv);
+  return calcMoveDps(p, lv, m) * effHp(p, lv) * (p.d + S.ivDef);
 }
 
 function getBestTdoMove(p, lv) {
