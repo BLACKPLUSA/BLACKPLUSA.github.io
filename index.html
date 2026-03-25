@@ -3,483 +3,437 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PoGO Calc</title>
+<title>PoGO · Damage Calc</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
+/* ── RESET & VARS ── */
 :root {
-  --bg:    #08090c;
-  --s1:    #0f1117;
-  --s2:    #171b24;
-  --s3:    #1e2330;
-  --bd:    rgba(255,255,255,.06);
-  --bd2:   rgba(255,255,255,.10);
-  --acc:   #e8b84b;
-  --acc-a: rgba(232,184,75,.08);
-  --acc-b: rgba(232,184,75,.15);
-  --bl:    #5b9cf6;
-  --gr:    #3ecf8e;
-  --re:    #f87171;
-  --pu:    #a78bfa;
-  --t1:    #e2e8f0;
-  --t2:    #7c8ca0;
-  --t3:    #3a4455;
-  --mono:  'IBM Plex Mono', monospace;
-  --body:  'Pretendard', -apple-system, sans-serif;
-  --r:     8px;
-  --rs:    5px;
+  --bg: #0a0c10;
+  --p1: #111520;
+  --p2: #181e2c;
+  --p3: #1f2840;
+  --b1: rgba(255,255,255,.06);
+  --b2: rgba(255,255,255,.11);
+  --b3: rgba(255,255,255,.18);
+  --acc: #f0c419;
+  --acc2: rgba(240,196,25,.08);
+  --acc3: rgba(240,196,25,.16);
+  --bl:  #4fb3f6;
+  --gr:  #3dd68c;
+  --pu:  #b794f4;
+  --re:  #f87171;
+  --t1:  #e8edf5;
+  --t2:  #8892a4;
+  --t3:  #404a5e;
+  --mono: 'Space Mono', monospace;
+  --body: 'Manrope', sans-serif;
+  --rad: 12px;
+  --rads: 7px;
 }
-
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+html { scroll-behavior: smooth; }
 body {
   background: var(--bg);
   color: var(--t1);
   font-family: var(--body);
-  font-size: 13px;
+  font-size: 14px;
+  line-height: 1.5;
   min-height: 100vh;
+  overflow-x: hidden;
 }
-
-/* 격자 배경 */
+/* subtle dot grid */
 body::before {
   content: '';
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background-image:
-    linear-gradient(var(--bd) 1px, transparent 1px),
-    linear-gradient(90deg, var(--bd) 1px, transparent 1px);
-  background-size: 40px 40px;
-  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
+  background: radial-gradient(rgba(240,196,25,.035) 1px, transparent 1px);
+  background-size: 30px 30px;
 }
+.app { position: relative; z-index: 1; max-width: 1080px; margin: 0 auto; padding: 0 20px 100px; }
 
-.root { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 0 16px 80px; }
-
-/* ── 헤더 ── */
+/* ── HEADER ── */
 .hdr {
-  display: flex; align-items: center; gap: 12px;
-  padding: 22px 0 18px;
-  border-bottom: 1px solid var(--bd2);
-  margin-bottom: 22px;
+  display: flex; align-items: center; gap: 16px;
+  padding: 28px 0 22px;
+  border-bottom: 1px solid var(--b1);
+  margin-bottom: 28px;
 }
-.logo-wrap {
-  width: 34px; height: 34px; flex-shrink: 0;
+.logo {
+  width: 40px; height: 40px; flex-shrink: 0;
   border-radius: 50%; position: relative; overflow: hidden;
-  border: 1.5px solid var(--acc);
-  box-shadow: 0 0 12px rgba(232,184,75,.25), 0 0 0 4px rgba(232,184,75,.06);
-  animation: logoPulse 3s ease-in-out infinite;
+  border: 2px solid var(--acc);
+  box-shadow: 0 0 0 4px rgba(240,196,25,.08);
+  animation: logoGlow 4s ease-in-out infinite;
 }
-@keyframes logoPulse {
-  0%,100% { box-shadow: 0 0 12px rgba(232,184,75,.2), 0 0 0 4px rgba(232,184,75,.04); }
-  50%      { box-shadow: 0 0 18px rgba(232,184,75,.4), 0 0 0 6px rgba(232,184,75,.10); }
+.logo-top { position: absolute; inset: 0; background: #e63946; clip-path: inset(0 0 50% 0); }
+.logo-bot { position: absolute; inset: 0; background: #f1faee; clip-path: inset(50% 0 0 0); }
+.logo-band { position: absolute; left:0;right:0; top: calc(50% - 1.5px); height: 3px; background: #111; z-index:1; }
+.logo-btn { position: absolute; left:50%;top:50%; transform:translate(-50%,-50%); width:9px;height:9px; border-radius:50%; background:#fff; border:2px solid #111; z-index:2; }
+@keyframes logoGlow { 0%,100%{box-shadow:0 0 0 4px rgba(240,196,25,.08)} 50%{box-shadow:0 0 0 6px rgba(240,196,25,.18),0 0 20px rgba(240,196,25,.12)} }
+.hdr-text h1 { font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--acc); letter-spacing: .02em; }
+.hdr-text p  { font-size: 11px; color: var(--t3); margin-top: 2px; letter-spacing: .03em; }
+.hdr-tags { display: flex; gap: 6px; margin-left: auto; }
+.tag {
+  font-size: 10px; font-family: var(--mono); padding: 3px 9px;
+  border-radius: 99px; border: 1px solid;
 }
-.logo-top { position: absolute; inset: 0; background: #c0392b; clip-path: inset(0 0 50% 0); }
-.logo-bot { position: absolute; inset: 0; background: #ecf0f1; clip-path: inset(50% 0 0 0); }
-.logo-line { position: absolute; left:0;right:0;top:calc(50% - 1px); height:2px; background:#111; z-index:1; }
-.logo-dot  { position: absolute; left:50%;top:50%;transform:translate(-50%,-50%); width:8px;height:8px; border-radius:50%; background:#fff; border:1.5px solid #111; z-index:2; }
+.tag-y { border-color: rgba(240,196,25,.4); color: rgba(240,196,25,.7); }
+.tag-b { border-color: rgba(79,179,246,.4); color: rgba(79,179,246,.7); }
 
-.hdr-title { font-family: var(--mono); font-size: 15px; font-weight: 600; color: var(--acc); letter-spacing:.02em; }
-.hdr-sub   { font-size: 11px; color: var(--t3); margin-top:2px; letter-spacing:.03em; }
-.hdr-right { margin-left:auto; display:flex; gap:6px; align-items:center; }
-.chip {
-  font-size: 10px; font-family: var(--mono);
-  padding: 3px 8px; border-radius: 3px;
-  border: 1px solid var(--bd2); color: var(--t3);
+/* ── SEARCH ── */
+.search-wrap { position: relative; max-width: 400px; margin-bottom: 26px; }
+.search-wrap input {
+  width: 100%; padding: 11px 14px 11px 42px;
+  background: var(--p1); border: 1px solid var(--b2);
+  border-radius: var(--rad); color: var(--t1);
+  font-family: var(--body); font-size: 14px; outline: none;
+  transition: border-color .18s, box-shadow .18s;
 }
-.chip-y { border-color: rgba(232,184,75,.3); color: rgba(232,184,75,.6); }
-.chip-b { border-color: rgba(91,156,246,.3); color: rgba(91,156,246,.6); }
-
-/* ── 검색 ── */
-.search-wrap { position: relative; max-width: 380px; margin-bottom: 20px; }
-.search-input {
-  width: 100%;
-  background: var(--s1); border: 1px solid var(--bd2);
-  border-radius: var(--r); color: var(--t1);
-  font-family: var(--body); font-size: 13px;
-  padding: 10px 14px 10px 38px;
-  outline: none; transition: border-color .18s, box-shadow .18s;
+.search-wrap input::placeholder { color: var(--t3); }
+.search-wrap input:focus { border-color: var(--acc); box-shadow: 0 0 0 3px rgba(240,196,25,.1); }
+.search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 15px; color: var(--t3); pointer-events: none; }
+.dropdown {
+  display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+  background: var(--p2); border: 1px solid var(--b2); border-radius: var(--rad);
+  overflow: hidden; z-index: 500; max-height: 280px; overflow-y: auto;
+  box-shadow: 0 16px 48px rgba(0,0,0,.6);
 }
-.search-input:focus { border-color: var(--acc); box-shadow: 0 0 0 3px var(--acc-a); }
-.search-input::placeholder { color: var(--t3); }
-.search-icon { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:var(--t3); font-size:14px; pointer-events:none; }
-
-.dd {
-  display:none; position:absolute; top:calc(100%+5px); left:0; right:0;
-  background:var(--s2); border:1px solid var(--bd2); border-radius:var(--r);
-  overflow:hidden; z-index:300; max-height:260px; overflow-y:auto;
-  box-shadow: 0 16px 48px rgba(0,0,0,.7);
-}
-.dd.open { display:block; }
-.dd::-webkit-scrollbar { width:3px; }
-.dd::-webkit-scrollbar-thumb { background:var(--s3); }
+.dropdown.open { display: block; }
+.dropdown::-webkit-scrollbar { width: 3px; }
+.dropdown::-webkit-scrollbar-thumb { background: var(--p3); border-radius: 99px; }
 .dd-item {
-  display:flex; align-items:center; gap:10px;
-  padding:8px 13px; cursor:pointer; transition:background .1s;
-  border-bottom:1px solid var(--bd);
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 14px; cursor: pointer; transition: background .12s;
+  border-bottom: 1px solid var(--b1);
 }
-.dd-item:last-child { border-bottom:none; }
-.dd-item:hover { background:var(--s3); }
-.dd-img  { width:32px; height:32px; object-fit:contain; image-rendering:pixelated; flex-shrink:0; }
-.dd-num  { font-family:var(--mono); font-size:10px; color:var(--t3); min-width:30px; }
-.dd-name { font-size:13px; font-weight:500; flex:1; }
-.dd-atk  { font-family:var(--mono); font-size:10px; color:var(--t3); }
+.dd-item:last-child { border-bottom: none; }
+.dd-item:hover { background: var(--p3); }
+.dd-sprite { width: 36px; height: 36px; object-fit: contain; image-rendering: pixelated; flex-shrink: 0; }
+.dd-num { font-family: var(--mono); font-size: 10px; color: var(--t3); min-width: 32px; }
+.dd-name { font-size: 13px; font-weight: 500; flex: 1; }
+.dd-atk { font-family: var(--mono); font-size: 11px; color: var(--t2); }
 
-/* ── 메인 레이아웃 ── */
-.main { display: grid; grid-template-columns: 240px 1fr; gap: 14px; align-items: start; }
-@media (max-width: 680px) { .main { grid-template-columns: 1fr; } }
+/* ── LAYOUT ── */
+.layout { display: grid; grid-template-columns: 290px 1fr; gap: 16px; align-items: start; }
+@media (max-width: 720px) { .layout { grid-template-columns: 1fr; } }
 
-/* ── 포켓몬 카드 ── */
+/* ── POKEMON CARD ── */
 .poke-card {
-  background: var(--s1); border: 1px solid var(--bd2);
-  border-radius: var(--r); overflow: hidden;
-  position: sticky; top: 14px;
+  background: var(--p1); border: 1px solid var(--b1);
+  border-radius: var(--rad); overflow: hidden; position: sticky; top: 16px;
 }
 .poke-hero {
-  position: relative;
-  background: linear-gradient(165deg, var(--s3) 0%, var(--s2) 50%, var(--s1) 100%);
-  padding: 24px 14px 16px;
+  position: relative; padding: 32px 16px 20px;
   display: flex; flex-direction: column; align-items: center;
-  border-bottom: 1px solid var(--bd);
+  background: linear-gradient(170deg, var(--p2) 0%, var(--p1) 100%);
+  border-bottom: 1px solid var(--b1);
+  overflow: hidden;
 }
 .poke-hero::after {
-  content: '';
-  position: absolute; bottom: 0; left: 0; right: 0; height: 60px;
-  background: linear-gradient(to top, var(--s1), transparent);
-  pointer-events: none; z-index: 1;
+  content: ''; position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%);
+  width: 160px; height: 80px;
+  background: radial-gradient(ellipse, rgba(240,196,25,.08), transparent 70%);
+  pointer-events: none;
 }
-.poke-no { position:absolute; top:10px; left:12px; font-family:var(--mono); font-size:10px; color:var(--t3); z-index:2; }
-.poke-img {
-  width: 100px; height: 100px; object-fit: contain; position: relative; z-index: 2;
-  filter: drop-shadow(0 8px 20px rgba(0,0,0,.6));
-  transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+.poke-dexno { position: absolute; top: 12px; left: 14px; font-family: var(--mono); font-size: 11px; color: var(--t3); }
+.poke-artwork {
+  width: 118px; height: 118px; object-fit: contain;
+  filter: drop-shadow(0 10px 24px rgba(0,0,0,.55));
+  transition: transform .32s cubic-bezier(.34,1.56,.64,1);
+  cursor: default; position: relative; z-index: 1;
 }
-.poke-img:hover { transform: translateY(-5px) scale(1.06); }
-.poke-en { font-family:var(--mono); font-size:10px; color:var(--t3); margin-top:10px; text-transform:uppercase; letter-spacing:.08em; z-index:2; position:relative; }
-.poke-kr { font-size:18px; font-weight:700; margin-top:2px; z-index:2; position:relative; letter-spacing:-.02em; }
-.poke-types { display:flex; gap:4px; margin-top:8px; flex-wrap:wrap; justify-content:center; z-index:2; position:relative; }
-.ttype {
-  font-size:10px; font-weight:600; padding:2px 9px; border-radius:99px;
-  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1);
-  letter-spacing:.03em;
+.poke-artwork:hover { transform: translateY(-5px) scale(1.06); }
+.poke-en { font-family: var(--mono); font-size: 10px; color: var(--t3); margin-top: 12px; text-transform: uppercase; letter-spacing: .08em; }
+.poke-kr { font-size: 22px; font-weight: 700; margin-top: 3px; letter-spacing: -.02em; }
+.poke-types { display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap; justify-content: center; }
+.type-chip {
+  font-size: 10px; font-weight: 600; padding: 3px 10px;
+  border-radius: 99px; letter-spacing: .04em;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
 }
+/* type colors */
 .t-normal{color:#c5c5b0}.t-fire{color:#ff8c42}.t-water{color:#6eaaff}.t-electric{color:#ffd233}
 .t-grass{color:#7cc87a}.t-ice{color:#99e1e1}.t-fighting{color:#ff6b5e}.t-poison{color:#d06cd0}
 .t-ground{color:#ddb74a}.t-flying{color:#9ea8f0}.t-psychic{color:#ff6fa8}.t-bug{color:#b0c83c}
 .t-rock{color:#c9a84c}.t-ghost{color:#9979cf}.t-dragon{color:#8c6dff}.t-dark{color:#b09070}
 .t-steel{color:#aabccc}.t-fairy{color:#ff9fcf}
+.tc-normal{--tc:#c5c5b0}.tc-fire{--tc:#ff8c42}.tc-water{--tc:#6eaaff}.tc-electric{--tc:#ffd233}
+.tc-grass{--tc:#7cc87a}.tc-ice{--tc:#99e1e1}.tc-fighting{--tc:#ff6b5e}.tc-poison{--tc:#d06cd0}
+.tc-ground{--tc:#ddb74a}.tc-flying{--tc:#9ea8f0}.tc-psychic{--tc:#ff6fa8}.tc-bug{--tc:#b0c83c}
+.tc-rock{--tc:#c9a84c}.tc-ghost{--tc:#9979cf}.tc-dragon{--tc:#8c6dff}.tc-dark{--tc:#b09070}
+.tc-steel{--tc:#aabccc}.tc-fairy{--tc:#ff9fcf}
 
-.poke-stats { padding: 12px 14px; }
-.srow { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
-.srow:last-child { margin-bottom:0; }
-.sl { font-family:var(--mono); font-size:9px; color:var(--t3); text-transform:uppercase; width:26px; flex-shrink:0; }
-.sbar-bg { flex:1; height:4px; background:var(--s3); border-radius:99px; overflow:hidden; }
-.sbar { height:100%; border-radius:99px; transition:width .5s; }
-.sbar-a { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
-.sbar-d { background:linear-gradient(90deg,#60a5fa,#818cf8); }
-.sbar-s { background:linear-gradient(90deg,#34d399,#10b981); }
-.sv { font-family:var(--mono); font-size:11px; font-weight:600; width:26px; text-align:right; }
+.poke-stats { padding: 14px 16px; display: flex; flex-direction: column; gap: 9px; }
+.stat-row { display: flex; align-items: center; gap: 10px; }
+.stat-lbl { font-family: var(--mono); font-size: 10px; color: var(--t3); width: 28px; flex-shrink: 0; }
+.stat-bar-bg { flex: 1; height: 5px; background: var(--p3); border-radius: 99px; overflow: hidden; }
+.stat-bar { height: 100%; border-radius: 99px; transition: width .5s ease; }
+.bar-a { background: linear-gradient(90deg, #fb923c, #fbbf24); }
+.bar-d { background: linear-gradient(90deg, #60a5fa, #818cf8); }
+.bar-s { background: linear-gradient(90deg, #34d399, #10b981); }
+.stat-val { font-family: var(--mono); font-size: 12px; font-weight: 700; width: 28px; text-align: right; }
 
-/* ── 오른쪽 컬럼 ── */
-.right { display:flex; flex-direction:column; gap:12px; }
+/* ── RIGHT SIDE ── */
+.right { display: flex; flex-direction: column; gap: 14px; }
 
-/* ── 패널 ── */
-.panel {
-  background: var(--s1); border: 1px solid var(--bd2);
-  border-radius: var(--r); overflow: hidden;
+/* ── CARD / PANEL ── */
+.card { background: var(--p1); border: 1px solid var(--b1); border-radius: var(--rad); overflow: hidden; }
+.card-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 11px 16px; border-bottom: 1px solid var(--b1);
 }
-.panel-hdr {
-  display:flex; align-items:center; gap:8px;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--bd);
-  background: rgba(255,255,255,.015);
-}
-.panel-title { font-family:var(--mono); font-size:10px; color:var(--t3); text-transform:uppercase; letter-spacing:.08em; font-weight:500; }
-.panel-body { padding: 14px; }
+.card-title { font-family: var(--mono); font-size: 10px; color: var(--t3); text-transform: uppercase; letter-spacing: .1em; }
+.card-body { padding: 16px; }
 
-/* ── 설정 패널 ── */
-.settings-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:14px; }
-@media (max-width:480px) { .settings-grid { grid-template-columns:1fr 1fr; } }
+/* ── CONTROLS ── */
+.ctrl-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+@media (max-width: 560px) { .ctrl-grid { grid-template-columns: 1fr 1fr; } }
+.ctrl-block label { display: block; font-size: 10px; font-family: var(--mono); color: var(--t3); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 6px; }
+.ctrl-block select,
+.ctrl-block input[type="number"] {
+  width: 100%; background: var(--p2); border: 1px solid var(--b2);
+  border-radius: var(--rads); color: var(--t1);
+  font-family: var(--body); font-size: 13px;
+  padding: 8px 10px; outline: none;
+  transition: border-color .15s;
+  -webkit-appearance: none;
+}
+.ctrl-block select:focus,
+.ctrl-block input[type="number"]:focus { border-color: var(--acc); }
 
-.ctrl-label {
-  display:block; font-family:var(--mono); font-size:9px; color:var(--t3);
-  text-transform:uppercase; letter-spacing:.08em; margin-bottom:5px; font-weight:500;
+.iv-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.iv-btn {
+  padding: 7px 4px; font-size: 12px; font-family: var(--mono); text-align: center;
+  background: var(--p2); border: 1px solid var(--b2); border-radius: var(--rads);
+  color: var(--t2); cursor: pointer; transition: all .13s;
 }
-.ctrl-select, .ctrl-input {
-  width:100%; background:var(--s2); border:1px solid var(--bd2);
-  border-radius:var(--rs); color:var(--t1); font-family:var(--body);
-  font-size:12px; padding:7px 9px; outline:none;
-  transition:border-color .15s; -webkit-appearance:none;
-}
-.ctrl-select:focus, .ctrl-input:focus { border-color:var(--acc); }
+.iv-btn:hover { border-color: var(--acc); color: var(--acc); }
+.iv-btn.sel { background: rgba(240,196,25,.1); border-color: var(--acc); color: var(--acc); }
 
-/* IV 슬라이더 */
-.iv-row { display:flex; align-items:center; gap:8px; }
-.iv-num { font-family:var(--mono); font-size:16px; font-weight:600; color:var(--acc); min-width:22px; text-align:right; }
-input[type=range] {
-  -webkit-appearance:none; flex:1; height:3px;
-  background:var(--s3); border-radius:99px; outline:none; cursor:pointer;
+/* ── LEVEL SLIDERS ── */
+.lv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+.lv-block label { display: block; font-size: 10px; font-family: var(--mono); color: var(--t3); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 7px; }
+.lv-num { font-family: var(--mono); font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 8px; }
+.lv-num.is-tgt { color: var(--acc); }
+input[type="range"] {
+  -webkit-appearance: none; width: 100%; height: 4px;
+  background: var(--p3); border-radius: 99px; outline: none; cursor: pointer;
 }
-input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance:none; width:13px; height:13px;
-  background:var(--acc); border-radius:50%;
-  border:2px solid var(--bg); box-shadow:0 0 5px rgba(232,184,75,.4);
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 15px; height: 15px;
+  background: var(--acc); border-radius: 50%;
+  border: 2.5px solid var(--bg); box-shadow: 0 0 6px rgba(240,196,25,.35);
 }
 
-/* ── 레벨 비교 ── */
-.lv-section { margin-top:14px; }
-.lv-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
-.lv-block {}
-.lv-lbl { font-family:var(--mono); font-size:9px; color:var(--t3); text-transform:uppercase; letter-spacing:.08em; display:block; margin-bottom:5px; font-weight:500; }
-.lv-num-big { font-family:var(--mono); font-size:24px; font-weight:600; line-height:1; margin-bottom:6px; }
-.lv-cur .lv-num-big { color: var(--t1); }
-.lv-tgt .lv-num-big { color: var(--acc); }
+/* ── UPLIFT BANNER ── */
+.uplift {
+  display: flex; align-items: center; gap: 14px;
+  margin-top: 16px; padding: 13px 16px;
+  background: rgba(240,196,25,.05);
+  border: 1px solid rgba(240,196,25,.15);
+  border-radius: var(--rads);
+}
+.uplift-pct { font-family: var(--mono); font-size: 30px; font-weight: 700; color: var(--acc); line-height: 1; white-space: nowrap; }
+.uplift-pct small { font-size: 15px; }
+.uplift-info { font-size: 12px; color: var(--t2); line-height: 1.7; }
+.uplift-info b { color: var(--t1); font-weight: 600; }
 
-/* ── 스탯 변화 배너 ── */
-.stat-banner {
-  background: var(--s2); border:1px solid var(--bd2);
-  border-radius:var(--rs); overflow:hidden; margin-top:12px;
-}
-.banner-top {
-  display:flex; align-items:center; gap:12px;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--bd);
-}
-.banner-tdo-pct {
-  font-family:var(--mono); font-size:22px; font-weight:600; color:var(--acc); white-space:nowrap;
-}
-.banner-label { font-size:11px; color:var(--t2); line-height:1.5; }
-.banner-label b { color:var(--t1); font-weight:600; }
-.banner-grid { display:grid; grid-template-columns:repeat(5,1fr); }
-.bgcell {
-  padding:8px 6px; text-align:center;
-  border-right:1px solid var(--bd);
-}
-.bgcell:last-child { border-right:none; }
-.bgcell-lbl { font-family:var(--mono); font-size:8px; color:var(--t3); text-transform:uppercase; letter-spacing:.06em; margin-bottom:3px; }
-.bgcell-val { font-family:var(--mono); font-size:11px; font-weight:600; }
-.bgcell-pct { font-size:9px; color:var(--t3); margin-top:1px; }
-.c-atk { color:#fbbf24; } .c-def { color:var(--bl); }
-.c-hp  { color:var(--gr); } .c-tdo { color:var(--pu); }
-.c-cpm { color:var(--acc); }
-
-/* ── CPM 테이블 ── */
-.cpm-scroll { max-height:300px; overflow-y:auto; }
-.cpm-scroll::-webkit-scrollbar { width:3px; }
-.cpm-scroll::-webkit-scrollbar-thumb { background:var(--s3); border-radius:99px; }
-.tbl { width:100%; border-collapse:collapse; }
-.tbl th {
-  font-family:var(--mono); font-size:9px; color:var(--t3); text-transform:uppercase;
-  letter-spacing:.06em; padding:8px 10px; border-bottom:1px solid var(--bd);
-  font-weight:500; text-align:left;
-  position:sticky; top:0; background:var(--s1); z-index:1;
-}
-.tbl th:not(:first-child) { text-align:right; }
-.tbl td { padding:6px 10px; border-bottom:1px solid rgba(255,255,255,.03); font-size:11px; }
-.tbl td:not(:first-child) { text-align:right; font-family:var(--mono); }
-.tbl tr:last-child td { border-bottom:none; }
-.tbl .r-cur td { background:rgba(91,156,246,.07); color:var(--bl); font-weight:600; }
-.tbl .r-tgt td { background:rgba(232,184,75,.07); color:var(--acc); font-weight:600; }
-.tbl .r-both td { background:rgba(167,139,250,.09); color:var(--pu); font-weight:600; }
-.lvi { font-weight:700; }
-
-/* ── 기술 테이블 ── */
-.move-tbl { width:100%; border-collapse:collapse; }
+/* ── MOVE TABLE ── */
+.move-tbl { width: 100%; border-collapse: collapse; }
 .move-tbl th {
-  font-family:var(--mono); font-size:9px; color:var(--t3); text-transform:uppercase;
-  letter-spacing:.06em; text-align:left; padding:8px 10px;
-  border-bottom:1px solid var(--bd); font-weight:500;
+  font-family: var(--mono); font-size: 10px; color: var(--t3);
+  text-transform: uppercase; letter-spacing: .06em;
+  text-align: left; padding: 8px 10px;
+  border-bottom: 1px solid var(--b1); font-weight: 400;
 }
-.move-tbl th:not(:first-child) { text-align:right; }
-.move-tbl td { padding:9px 10px; border-bottom:1px solid var(--bd); font-size:12px; vertical-align:top; }
-.move-tbl tr:last-child td { border-bottom:none; }
-.move-tbl tr:hover td { background:rgba(255,255,255,.012); }
-.move-tbl td:not(:first-child) { text-align:right; font-family:var(--mono); }
-.mv-name { font-weight:600; font-size:12px; }
-.mv-kind {
-  font-family:var(--mono); font-size:8px; padding:2px 5px;
-  border-radius:3px; margin-left:5px; vertical-align:middle;
+.move-tbl th:not(:first-child) { text-align: right; }
+.move-tbl td { padding: 11px 10px; border-bottom: 1px solid var(--b1); vertical-align: middle; }
+.move-tbl tr:last-child td { border-bottom: none; }
+.move-tbl tr:hover td { background: rgba(255,255,255,.015); }
+.move-tbl td:not(:first-child) { text-align: right; font-family: var(--mono); }
+.mv-name { font-size: 13px; font-weight: 600; }
+.mv-badge {
+  font-size: 9px; font-family: var(--mono); padding: 2px 6px;
+  border-radius: 3px; margin-left: 6px; vertical-align: middle;
 }
-.mv-fast   { background:rgba(91,156,246,.12); color:var(--bl); border:1px solid rgba(91,156,246,.2); }
-.mv-charge { background:rgba(167,139,250,.12); color:var(--pu); border:1px solid rgba(167,139,250,.2); }
-.mv-meta { font-size:10px; color:var(--t3); margin-top:2px; }
-.mv-ttype {
-  display:inline-block; font-size:9px; font-weight:600; padding:1px 6px;
-  border-radius:99px; border:1px solid rgba(255,255,255,.15); margin-right:4px;
-}
-.stab { color:var(--acc); font-size:9px; margin-left:2px; vertical-align:middle; }
-.d-cur { color:var(--t2); font-size:12px; }
-.d-tgt { color:var(--acc); font-weight:700; font-size:12px; }
-.d-sub { font-size:9px; color:var(--t3); margin-top:1px; }
-.diff-up { font-size:10px; padding:2px 5px; border-radius:3px; background:rgba(62,207,142,.1); color:var(--gr); border:1px solid rgba(62,207,142,.2); }
-.diff-nil { font-size:10px; color:var(--t3); }
+.mv-fast   { background: rgba(79,179,246,.1); color: var(--bl); border: 1px solid rgba(79,179,246,.2); }
+.mv-charge { background: rgba(183,148,244,.1); color: var(--pu); border: 1px solid rgba(183,148,244,.2); }
+.mv-meta { font-size: 10px; color: var(--t3); margin-top: 2px; }
+.mv-ttype { display: inline-flex; padding: 1px 7px; border-radius: 99px; font-size: 9px; font-weight: 600; border: 1px solid; margin-right: 4px; }
+.stab-star { color: var(--acc); font-size: 9px; margin-left: 2px; vertical-align: middle; }
+.d-cur { color: var(--t2); }
+.d-tgt { color: var(--acc); font-weight: 700; }
+.d-sub { font-size: 10px; color: var(--t3); margin-top: 1px; }
+.d-diff-up { display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 3px; background: rgba(61,214,140,.1); color: var(--gr); border: 1px solid rgba(61,214,140,.2); }
+.d-diff-eq { color: var(--t3); font-size: 10px; }
 
-/* ── 계산식 ── */
-.formula { font-family:var(--mono); font-size:10px; color:var(--t2); line-height:2.1; padding:12px 14px; border-left:2px solid var(--acc); background:var(--s2); border-radius:0 var(--rs) var(--rs) 0; }
-.fy { color:var(--acc); } .fb { color:var(--bl); } .fg { font-size:9px; color:var(--t3); }
+/* ── CPM TABLE ── */
+.cpm-scroll { max-height: 360px; overflow-y: auto; }
+.cpm-scroll::-webkit-scrollbar { width: 3px; }
+.cpm-scroll::-webkit-scrollbar-thumb { background: var(--p3); border-radius: 99px; }
+.cpm-tbl { width: 100%; border-collapse: collapse; }
+.cpm-tbl th {
+  font-family: var(--mono); font-size: 10px; color: var(--t3); text-transform: uppercase;
+  letter-spacing: .06em; padding: 8px 10px; border-bottom: 1px solid var(--b1);
+  font-weight: 400; text-align: left;
+  position: sticky; top: 0; background: var(--p1);
+}
+.cpm-tbl th:not(:first-child) { text-align: right; }
+.cpm-tbl td { padding: 7px 10px; border-bottom: 1px solid rgba(255,255,255,.03); font-size: 12px; }
+.cpm-tbl td:not(:first-child) { text-align: right; font-family: var(--mono); }
+.cpm-tbl tr:last-child td { border-bottom: none; }
+.row-cur td { background: rgba(79,179,246,.06); color: var(--bl); font-weight: 600; }
+.row-tgt td { background: rgba(240,196,25,.06); color: var(--acc); font-weight: 600; }
+.row-both td { background: rgba(183,148,244,.08); color: var(--pu); font-weight: 600; }
+.lv-int { font-weight: 700; }
 
-/* ── 공통 ── */
-.empty { font-family:var(--mono); font-size:10px; color:var(--t3); padding:8px 0; line-height:1.6; }
-.spin { display:inline-block; width:12px; height:12px; border:2px solid var(--s3); border-top-color:var(--acc); border-radius:50%; animation:sp .6s linear infinite; vertical-align:middle; margin-right:6px; }
-@keyframes sp { to { transform:rotate(360deg); } }
-.init-ph { padding:40px 16px; text-align:center; font-family:var(--mono); font-size:10px; color:var(--t3); }
-.foot-note { font-size:10px; color:var(--t3); font-family:var(--mono); margin-top:10px; line-height:1.6; }
+/* ── FORMULA ── */
+.formula {
+  background: var(--p2); border-left: 2px solid var(--acc);
+  border-radius: 0 var(--rads) var(--rads) 0;
+  padding: 13px 16px; font-family: var(--mono);
+  font-size: 11px; color: var(--t2); line-height: 2.1;
+}
+.formula .y { color: var(--acc); }
+.formula .b { color: var(--bl); }
+.formula .g { color: var(--t3); font-size: 10px; }
+
+/* ── UTILS ── */
+.empty { font-family: var(--mono); font-size: 11px; color: var(--t3); padding: 8px 0; }
+.spin { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--p3); border-top-color: var(--acc); border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle; margin-right: 6px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.init-msg { padding: 50px 20px; text-align: center; font-family: var(--mono); font-size: 11px; color: var(--t3); }
 </style>
 </head>
 <body>
-<div class="root">
+<div class="app">
 
-<!-- 헤더 -->
-<header class="hdr">
-  <div class="logo-wrap">
-    <div class="logo-top"></div><div class="logo-bot"></div>
-    <div class="logo-line"></div><div class="logo-dot"></div>
-  </div>
-  <div>
-    <div class="hdr-title">PoGO · Damage Calc</div>
-    <div class="hdr-sub">포켓몬GO 레벨별 딜 계산기 — Game Master 내장</div>
-  </div>
-  <div class="hdr-right">
-    <span class="chip chip-y">Game Master</span>
-    <span class="chip chip-b">PokeAPI</span>
-  </div>
-</header>
-
-<!-- 검색 -->
-<div class="search-wrap">
-  <span class="search-icon">⌕</span>
-  <input id="searchQ" class="search-input" type="text"
-    placeholder="포켓몬 검색… (이름·한국어·번호)" autocomplete="off" spellcheck="false">
-  <div class="dd" id="dd"></div>
-</div>
-
-<!-- 메인 -->
-<div class="main">
-
-  <!-- 왼쪽: 포켓몬 카드 -->
-  <div>
-    <div class="poke-card" id="pokeCard">
-      <div class="init-ph"><span class="spin"></span>초기화 중…</div>
+  <!-- Header -->
+  <header class="hdr">
+    <div class="logo">
+      <div class="logo-top"></div>
+      <div class="logo-bot"></div>
+      <div class="logo-band"></div>
+      <div class="logo-btn"></div>
     </div>
-    <div class="panel" style="margin-top:12px">
-      <div class="panel-hdr"><span class="panel-title">계산식</span></div>
-      <div class="formula">
-        Damage = Floor(<br>
-        &nbsp;&nbsp;<span class="fy">0.5</span> × <span class="fb">위력</span> × Atk / Def<br>
-        &nbsp;&nbsp;× <span class="fy">STAB(1.2)</span> × 타입상성<br>
-        ) + 1<br><br>
-        Atk = (<span class="fy">기본공격</span> + <span class="fb">IV</span>) × <span class="fy">CPM</span><br>
-        TDO = <span class="fy">Atk</span> × (<span class="fb">HP</span>+14) × (<span class="fy">Def</span>+14)<br>
-        <span class="fg">· PvE(레이드/체육관) 기준 · STAB 자동적용</span>
+    <div class="hdr-text">
+      <h1>PoGO · Damage Calc</h1>
+      <p>레벨별 딜 계산기 &nbsp;—&nbsp; Game Master 데이터 내장</p>
+    </div>
+    <div class="hdr-tags">
+      <span class="tag tag-y">Game Master</span>
+      <span class="tag tag-b">PokeAPI</span>
+    </div>
+  </header>
+
+  <!-- Search -->
+  <div class="search-wrap">
+    <span class="search-icon">⌕</span>
+    <input id="searchQ" type="text" placeholder="포켓몬 이름 또는 번호 검색… (가디안, 282)" autocomplete="off" spellcheck="false">
+    <div class="dropdown" id="dropdown"></div>
+  </div>
+
+  <!-- Main layout -->
+  <div class="layout">
+
+    <!-- Left: Pokémon card -->
+    <div>
+      <div class="poke-card" id="pokeCard">
+        <div class="init-msg"><span class="spin"></span>초기화 중…</div>
       </div>
-    </div>
-  </div>
 
-  <!-- 오른쪽 -->
-  <div class="right">
-
-    <!-- 설정 -->
-    <div class="panel">
-      <div class="panel-hdr"><span class="panel-title">⚙ 설정</span></div>
-      <div class="panel-body">
-
-        <div class="settings-grid">
-          <div>
-            <label class="ctrl-label">공격 IV <span id="ivVal" style="color:var(--acc)">15</span></label>
-            <div class="iv-row">
-              <span style="font-family:var(--mono);font-size:10px;color:var(--t3)">0</span>
-              <input type="range" id="ivRange" min="0" max="15" step="1" value="15">
-              <span style="font-family:var(--mono);font-size:10px;color:var(--t3)">15</span>
-            </div>
-          </div>
-          <div>
-            <label class="ctrl-label">방어자 DEF</label>
-            <input type="number" id="defInput" class="ctrl-input" value="100" min="1" max="600">
-          </div>
-          <div>
-            <label class="ctrl-label">타입 상성</label>
-            <select id="effInput" class="ctrl-select">
-              <option value="2.56">×2.56 (2중 효과)</option>
-              <option value="1.6">×1.6 (효과 굉장)</option>
-              <option value="1.0" selected>×1.0 (보통)</option>
-              <option value="0.625">×0.625 (미미)</option>
-              <option value="0.390625">×0.39 (2중 미미)</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="lv-section">
-          <div class="lv-row">
-            <div class="lv-block lv-cur">
-              <label class="lv-lbl">현재 레벨</label>
-              <div class="lv-num-big" id="curNum">40</div>
-              <input type="range" id="curRange" min="1" max="101" value="79">
-            </div>
-            <div class="lv-block lv-tgt">
-              <label class="lv-lbl">목표 레벨</label>
-              <div class="lv-num-big" id="tgtNum">50</div>
-              <input type="range" id="tgtRange" min="1" max="101" value="99">
-            </div>
-          </div>
-
-          <div class="stat-banner">
-            <div class="banner-top">
-              <div class="banner-tdo-pct" id="bannerTdo">—%</div>
-              <div class="banner-label" id="bannerLabel">포켓몬을 선택하세요</div>
-            </div>
-            <div class="banner-grid" id="bannerGrid" style="display:none">
-              <div class="bgcell">
-                <div class="bgcell-lbl">ATK</div>
-                <div class="bgcell-val c-atk" id="bcAtk">—</div>
-                <div class="bgcell-pct" id="bcAtkP">—</div>
-              </div>
-              <div class="bgcell">
-                <div class="bgcell-lbl">DEF</div>
-                <div class="bgcell-val c-def" id="bcDef">—</div>
-                <div class="bgcell-pct" id="bcDefP">—</div>
-              </div>
-              <div class="bgcell">
-                <div class="bgcell-lbl">HP</div>
-                <div class="bgcell-val c-hp" id="bcHp">—</div>
-                <div class="bgcell-pct" id="bcHpP">—</div>
-              </div>
-              <div class="bgcell">
-                <div class="bgcell-lbl">TDO %</div>
-                <div class="bgcell-val c-tdo" id="bcTdo">—</div>
-                <div class="bgcell-pct" id="bcTdoP">ATK×HP×DEF</div>
-              </div>
-              <div class="bgcell">
-                <div class="bgcell-lbl">CPM</div>
-                <div class="bgcell-val c-cpm" id="bcCpm">—</div>
-                <div class="bgcell-pct" id="bcCpmP">—</div>
-              </div>
-            </div>
+      <!-- Formula -->
+      <div class="card" style="margin-top:14px">
+        <div class="card-head"><span class="card-title">계산식</span></div>
+        <div class="card-body">
+          <div class="formula">
+            Damage = Floor(<br>
+            &nbsp;&nbsp;<span class="y">0.5</span> × <span class="b">위력</span> × (Atk ÷ Def)<br>
+            &nbsp;&nbsp;× <span class="y">STAB</span> × 타입상성<br>
+            ) + 1<br><br>
+            Atk = (<span class="y">기본공격</span> + <span class="b">IV</span>) × <span class="y">CPM</span><br>
+            <span class="g">STAB = 1.2 (자속 보정) &nbsp;·&nbsp; 방어자 DEF 직접 설정</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- CPM 테이블 (기술 위에) -->
-    <div class="panel">
-      <div class="panel-hdr"><span class="panel-title">📊 레벨별 실질 공격력</span></div>
-      <div class="cpm-scroll">
-        <div id="cpmPanel" style="padding:12px">
-          <div class="empty">포켓몬을 선택하면 표시됩니다.</div>
+    <!-- Right -->
+    <div class="right">
+
+      <!-- Settings -->
+      <div class="card">
+        <div class="card-head"><span class="card-title">⚙&nbsp; 설정</span></div>
+        <div class="card-body">
+          <div class="ctrl-grid">
+            <div class="ctrl-block">
+              <label>공격 IV &nbsp;<b id="ivVal" style="color:var(--acc);font-size:13px">15</b></label>
+              <div style="padding:4px 0">
+                <input type="range" id="ivRange" min="0" max="15" step="1" value="15" style="margin-bottom:4px">
+                <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--t3)">
+                  <span>0</span><span>5</span><span>10</span><span>15</span>
+                </div>
+              </div>
+            </div>
+            <div class="ctrl-block">
+              <label>방어자 DEF</label>
+              <input type="number" id="defInput" value="100" min="1" max="600">
+            </div>
+            <div class="ctrl-block">
+              <label>타입 상성</label>
+              <select id="effInput">
+                <option value="2.56">×2.56 (2중 효과)</option>
+                <option value="1.6">×1.6 (효과 굉장)</option>
+                <option value="1.0" selected>×1.0 (보통)</option>
+                <option value="0.625">×0.625 (효과 미미)</option>
+                <option value="0.390625">×0.39 (2중 미미)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="lv-grid">
+            <div class="lv-block">
+              <label>현재 레벨</label>
+              <div class="lv-num" id="curNum">40</div>
+              <input type="range" id="curRange" min="1" max="99" value="79">
+            </div>
+            <div class="lv-block">
+              <label>목표 레벨</label>
+              <div class="lv-num is-tgt" id="tgtNum">50</div>
+              <input type="range" id="tgtRange" min="1" max="99" value="99">
+            </div>
+          </div>
+
+          <div class="uplift">
+            <div class="uplift-pct" id="upliftPct">—<small>%</small></div>
+            <div class="uplift-info" id="upliftInfo">레벨을 설정하세요</div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- 기술 테이블 -->
-    <div class="panel">
-      <div class="panel-hdr"><span class="panel-title">⚔ 기술별 데미지</span></div>
-      <div id="movePanel" class="panel-body">
-        <div class="empty">포켓몬을 검색하면 기술 정보가 표시됩니다.</div>
+      <!-- Moves -->
+      <div class="card">
+        <div class="card-head"><span class="card-title">⚔&nbsp; 기술별 데미지</span></div>
+        <div id="movePanel" class="card-body">
+          <div class="empty">포켓몬을 검색하면 기술 정보가 표시됩니다.</div>
+        </div>
       </div>
-    </div>
 
-  </div><!-- /right -->
-</div><!-- /main -->
-</div><!-- /root -->
+      <!-- CPM Table -->
+      <div class="card">
+        <div class="card-head"><span class="card-title">📊&nbsp; 레벨별 실질 공격력</span></div>
+        <div class="cpm-scroll">
+          <div id="cpmPanel" style="padding:14px">
+            <div class="empty">포켓몬을 선택하면 표시됩니다.</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /right -->
+  </div><!-- /layout -->
+</div><!-- /app -->
 
 <script>
-
 // ═══════════════════════════════════════════════════════
 // CPM TABLE  (Game Master, Lv1~50, 0.5 단위)
 // ═══════════════════════════════════════════════════════
@@ -1655,13 +1609,13 @@ function renderCard() {
   const types = S.types || [];
   const chips = types.map(t => {
     const cl = TC[t] || '';
-    return `<span class="ttype t-${cl}">${TK[t] || t}</span>`;
+    return `<span class="type-chip t-${cl}">${TK[t] || t}</span>`;
   }).join('');
   const mA = 354, mD = 310, mS = 510;
   document.getElementById('pokeCard').innerHTML = `
     <div class="poke-hero">
-      <div class="poke-no">#${String(p.id).padStart(3,'0')}</div>
-      <img class="poke-img"
+      <div class="poke-dexno">#${String(p.id).padStart(3,'0')}</div>
+      <img class="poke-artwork"
         src="${artworkURL(p.id)}"
         alt="${kr}"
         onerror="this.src='${spriteURL(p.id)}'"
@@ -1671,20 +1625,20 @@ function renderCard() {
       <div class="poke-types">${chips || '<span style="color:var(--t3);font-size:11px">타입 로딩 중…</span>'}</div>
     </div>
     <div class="poke-stats">
-      <div class="srow">
-        <div class="sl">ATK</div>
-        <div class="sbar-bg"><div class="sbar sbar-a" style="width:${p.a/mA*100}%"></div></div>
-        <div class="sv">${p.a}</div>
+      <div class="stat-row">
+        <div class="stat-lbl">ATK</div>
+        <div class="stat-bar-bg"><div class="stat-bar bar-a" style="width:${p.a/mA*100}%"></div></div>
+        <div class="stat-val">${p.a}</div>
       </div>
-      <div class="srow">
-        <div class="sl">DEF</div>
-        <div class="sbar-bg"><div class="sbar sbar-d" style="width:${p.d/mD*100}%"></div></div>
-        <div class="sv">${p.d}</div>
+      <div class="stat-row">
+        <div class="stat-lbl">DEF</div>
+        <div class="stat-bar-bg"><div class="stat-bar bar-d" style="width:${p.d/mD*100}%"></div></div>
+        <div class="stat-val">${p.d}</div>
       </div>
-      <div class="srow">
-        <div class="sl">STA</div>
-        <div class="sbar-bg"><div class="sbar sbar-s" style="width:${p.s/mS*100}%"></div></div>
-        <div class="sv">${p.s}</div>
+      <div class="stat-row">
+        <div class="stat-lbl">STA</div>
+        <div class="stat-bar-bg"><div class="stat-bar bar-s" style="width:${p.s/mS*100}%"></div></div>
+        <div class="stat-val">${p.s}</div>
       </div>
     </div>`;
 }
@@ -1755,7 +1709,7 @@ function renderCPM() {
     const cpm = CPM[lv];
     const atk = ((p.a + S.iv) * cpm).toFixed(2);
     const isC = lv === S.curLv, isT = lv === S.tgtLv;
-    const cls = isC && isT ? 'r-both' : isC ? 'r-cur' : isT ? 'r-tgt' : '';
+    const cls = isC && isT ? 'row-both' : isC ? 'row-cur' : isT ? 'row-tgt' : '';
     const tag = isC && isT ? '◆' : isC ? '◄' : isT ? '▶' : '';
     const lvHTML = Number.isInteger(lv) ? `<b class="lv-int">${lv}</b>` : `${lv}`;
     return `<tr class="${cls}">
@@ -1767,7 +1721,7 @@ function renderCPM() {
   }).join('');
 
   document.getElementById('cpmPanel').innerHTML = `
-    <table class="tbl">
+    <table class="cpm-tbl">
       <thead><tr>
         <th>레벨</th><th>CPM</th><th>실질 ATK (IV${S.iv})</th><th></th>
       </tr></thead>
@@ -1785,38 +1739,18 @@ function renderCPM() {
 // ═══════════════════════════════════════════════════════
 function renderUplift() {
   const c = CPM[S.curLv], t = CPM[S.tgtLv];
-  const cpmPct = (t/c - 1) * 100;
-  const fmt = v => (v>=0?'+':'')+v.toFixed(2)+'%';
-  const grid = document.getElementById('bannerGrid');
-
-  if (!S.poke) {
-    document.getElementById('bannerTdo').textContent = '—%';
-    document.getElementById('bannerLabel').innerHTML = `CPM &nbsp;${c.toFixed(5)} → ${t.toFixed(5)}`;
-    grid.style.display = 'none';
-    return;
+  const pct = (t/c - 1) * 100;
+  const sign = pct >= 0 ? '+' : '';
+  let info = '';
+  if (S.poke) {
+    const a1 = ((S.poke.a + S.iv) * c).toFixed(1);
+    const a2 = ((S.poke.a + S.iv) * t).toFixed(1);
+    info = `실질 공격력 <b>${a1}</b> → <b>${a2}</b>&nbsp;&nbsp;(Lv.${S.curLv} → Lv.${S.tgtLv})`;
+  } else {
+    info = `CPM &nbsp;${c.toFixed(5)} → ${t.toFixed(5)}`;
   }
-  const p = S.poke;
-  const atk1=(p.a+S.iv)*c, atk2=(p.a+S.iv)*t;
-  const def1=(p.d+S.iv)*c, def2=(p.d+S.iv)*t;
-  const hp1=Math.floor((p.s+S.iv)*c), hp2=Math.floor((p.s+S.iv)*t);
-  const tdo1=atk1*(hp1+14)*(def1+14), tdo2=atk2*(hp2+14)*(def2+14);
-  const atkPct=(atk2/atk1-1)*100, defPct=(def2/def1-1)*100;
-  const hpPct=(hp2/hp1-1)*100, tdoPct=(tdo2/tdo1-1)*100;
-
-  document.getElementById('bannerTdo').textContent = fmt(tdoPct);
-  document.getElementById('bannerLabel').innerHTML =
-    `TDO 상승률 &nbsp;Lv.<b>${S.curLv}</b> → Lv.<b>${S.tgtLv}</b>`;
-  grid.style.display = 'grid';
-  document.getElementById('bcAtk').textContent  = atk2.toFixed(1);
-  document.getElementById('bcAtkP').textContent = fmt(atkPct);
-  document.getElementById('bcDef').textContent  = def2.toFixed(1);
-  document.getElementById('bcDefP').textContent = fmt(defPct);
-  document.getElementById('bcHp').textContent   = hp2;
-  document.getElementById('bcHpP').textContent  = fmt(hpPct);
-  document.getElementById('bcTdo').textContent  = fmt(tdoPct).replace('%','');
-  document.getElementById('bcTdoP').textContent = 'ATK×HP×DEF';
-  document.getElementById('bcCpm').textContent  = t.toFixed(5);
-  document.getElementById('bcCpmP').textContent = fmt(cpmPct);
+  document.getElementById('upliftPct').innerHTML = `${sign}${pct.toFixed(2)}<small>%</small>`;
+  document.getElementById('upliftInfo').innerHTML = info;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1956,7 +1890,6 @@ if (gardevoir) {
   searchQ.value = KR_CACHE[gardevoir.id] || gardevoir.n;
   selectPokemon(gardevoir);
 }
-
 </script>
 </body>
 </html>
