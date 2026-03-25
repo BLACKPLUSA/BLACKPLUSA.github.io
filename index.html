@@ -1,1039 +1,554 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PoGO · Damage Calc</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<style>
-/* ── RESET & VARS ── */
-:root {
-  --bg: #0a0c10;
-  --p1: #111520;
-  --p2: #181e2c;
-  --p3: #1f2840;
-  --b1: rgba(255,255,255,.06);
-  --b2: rgba(255,255,255,.11);
-  --b3: rgba(255,255,255,.18);
-  --acc: #f0c419;
-  --acc2: rgba(240,196,25,.08);
-  --acc3: rgba(240,196,25,.16);
-  --bl:  #4fb3f6;
-  --gr:  #3dd68c;
-  --pu:  #b794f4;
-  --re:  #f87171;
-  --t1:  #e8edf5;
-  --t2:  #8892a4;
-  --t3:  #404a5e;
-  --mono: 'Space Mono', monospace;
-  --body: 'Manrope', sans-serif;
-  --rad: 12px;
-  --rads: 7px;
-}
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-body {
-  background: var(--bg);
-  color: var(--t1);
-  font-family: var(--body);
-  font-size: 14px;
-  line-height: 1.5;
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-/* subtle dot grid */
-body::before {
-  content: '';
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background: radial-gradient(rgba(240,196,25,.035) 1px, transparent 1px);
-  background-size: 30px 30px;
-}
-.app { position: relative; z-index: 1; max-width: 1080px; margin: 0 auto; padding: 0 20px 100px; }
-
-/* ── HEADER ── */
-.hdr {
-  display: flex; align-items: center; gap: 16px;
-  padding: 28px 0 22px;
-  border-bottom: 1px solid var(--b1);
-  margin-bottom: 28px;
-}
-.logo {
-  width: 40px; height: 40px; flex-shrink: 0;
-  border-radius: 50%; position: relative; overflow: hidden;
-  border: 2px solid var(--acc);
-  box-shadow: 0 0 0 4px rgba(240,196,25,.08);
-  animation: logoGlow 4s ease-in-out infinite;
-}
-.logo-top { position: absolute; inset: 0; background: #e63946; clip-path: inset(0 0 50% 0); }
-.logo-bot { position: absolute; inset: 0; background: #f1faee; clip-path: inset(50% 0 0 0); }
-.logo-band { position: absolute; left:0;right:0; top: calc(50% - 1.5px); height: 3px; background: #111; z-index:1; }
-.logo-btn { position: absolute; left:50%;top:50%; transform:translate(-50%,-50%); width:9px;height:9px; border-radius:50%; background:#fff; border:2px solid #111; z-index:2; }
-@keyframes logoGlow { 0%,100%{box-shadow:0 0 0 4px rgba(240,196,25,.08)} 50%{box-shadow:0 0 0 6px rgba(240,196,25,.18),0 0 20px rgba(240,196,25,.12)} }
-.hdr-text h1 { font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--acc); letter-spacing: .02em; }
-.hdr-text p  { font-size: 11px; color: var(--t3); margin-top: 2px; letter-spacing: .03em; }
-.hdr-tags { display: flex; gap: 6px; margin-left: auto; }
-.tag {
-  font-size: 10px; font-family: var(--mono); padding: 3px 9px;
-  border-radius: 99px; border: 1px solid;
-}
-.tag-y { border-color: rgba(240,196,25,.4); color: rgba(240,196,25,.7); }
-.tag-b { border-color: rgba(79,179,246,.4); color: rgba(79,179,246,.7); }
-
-/* ── SEARCH ── */
-.search-wrap { position: relative; max-width: 400px; margin-bottom: 26px; }
-.search-wrap input {
-  width: 100%; padding: 11px 14px 11px 42px;
-  background: var(--p1); border: 1px solid var(--b2);
-  border-radius: var(--rad); color: var(--t1);
-  font-family: var(--body); font-size: 14px; outline: none;
-  transition: border-color .18s, box-shadow .18s;
-}
-.search-wrap input::placeholder { color: var(--t3); }
-.search-wrap input:focus { border-color: var(--acc); box-shadow: 0 0 0 3px rgba(240,196,25,.1); }
-.search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 15px; color: var(--t3); pointer-events: none; }
-.dropdown {
-  display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0;
-  background: var(--p2); border: 1px solid var(--b2); border-radius: var(--rad);
-  overflow: hidden; z-index: 500; max-height: 280px; overflow-y: auto;
-  box-shadow: 0 16px 48px rgba(0,0,0,.6);
-}
-.dropdown.open { display: block; }
-.dropdown::-webkit-scrollbar { width: 3px; }
-.dropdown::-webkit-scrollbar-thumb { background: var(--p3); border-radius: 99px; }
-.dd-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 9px 14px; cursor: pointer; transition: background .12s;
-  border-bottom: 1px solid var(--b1);
-}
-.dd-item:last-child { border-bottom: none; }
-.dd-item:hover { background: var(--p3); }
-.dd-sprite { width: 36px; height: 36px; object-fit: contain; image-rendering: pixelated; flex-shrink: 0; }
-.dd-num { font-family: var(--mono); font-size: 10px; color: var(--t3); min-width: 32px; }
-.dd-name { font-size: 13px; font-weight: 500; flex: 1; }
-.dd-atk { font-family: var(--mono); font-size: 11px; color: var(--t2); }
-
-/* ── LAYOUT ── */
-.layout { display: grid; grid-template-columns: 290px 1fr; gap: 16px; align-items: start; }
-@media (max-width: 720px) { .layout { grid-template-columns: 1fr; } }
-
-/* ── POKEMON CARD ── */
-.poke-card {
-  background: var(--p1); border: 1px solid var(--b1);
-  border-radius: var(--rad); overflow: hidden; position: sticky; top: 16px;
-}
-.poke-hero {
-  position: relative; padding: 32px 16px 20px;
-  display: flex; flex-direction: column; align-items: center;
-  background: linear-gradient(170deg, var(--p2) 0%, var(--p1) 100%);
-  border-bottom: 1px solid var(--b1);
-  overflow: hidden;
-}
-.poke-hero::after {
-  content: ''; position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%);
-  width: 160px; height: 80px;
-  background: radial-gradient(ellipse, rgba(240,196,25,.08), transparent 70%);
-  pointer-events: none;
-}
-.poke-dexno { position: absolute; top: 12px; left: 14px; font-family: var(--mono); font-size: 11px; color: var(--t3); }
-.poke-artwork {
-  width: 118px; height: 118px; object-fit: contain;
-  filter: drop-shadow(0 10px 24px rgba(0,0,0,.55));
-  transition: transform .32s cubic-bezier(.34,1.56,.64,1);
-  cursor: default; position: relative; z-index: 1;
-}
-.poke-artwork:hover { transform: translateY(-5px) scale(1.06); }
-.poke-en { font-family: var(--mono); font-size: 10px; color: var(--t3); margin-top: 12px; text-transform: uppercase; letter-spacing: .08em; }
-.poke-kr { font-size: 22px; font-weight: 700; margin-top: 3px; letter-spacing: -.02em; }
-.poke-types { display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap; justify-content: center; }
-.type-chip {
-  font-size: 10px; font-weight: 600; padding: 3px 10px;
-  border-radius: 99px; letter-spacing: .04em;
-  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
-}
-/* type colors */
-.t-normal{color:#c5c5b0}.t-fire{color:#ff8c42}.t-water{color:#6eaaff}.t-electric{color:#ffd233}
-.t-grass{color:#7cc87a}.t-ice{color:#99e1e1}.t-fighting{color:#ff6b5e}.t-poison{color:#d06cd0}
-.t-ground{color:#ddb74a}.t-flying{color:#9ea8f0}.t-psychic{color:#ff6fa8}.t-bug{color:#b0c83c}
-.t-rock{color:#c9a84c}.t-ghost{color:#9979cf}.t-dragon{color:#8c6dff}.t-dark{color:#b09070}
-.t-steel{color:#aabccc}.t-fairy{color:#ff9fcf}
-.tc-normal{--tc:#c5c5b0}.tc-fire{--tc:#ff8c42}.tc-water{--tc:#6eaaff}.tc-electric{--tc:#ffd233}
-.tc-grass{--tc:#7cc87a}.tc-ice{--tc:#99e1e1}.tc-fighting{--tc:#ff6b5e}.tc-poison{--tc:#d06cd0}
-.tc-ground{--tc:#ddb74a}.tc-flying{--tc:#9ea8f0}.tc-psychic{--tc:#ff6fa8}.tc-bug{--tc:#b0c83c}
-.tc-rock{--tc:#c9a84c}.tc-ghost{--tc:#9979cf}.tc-dragon{--tc:#8c6dff}.tc-dark{--tc:#b09070}
-.tc-steel{--tc:#aabccc}.tc-fairy{--tc:#ff9fcf}
-
-.poke-stats { padding: 14px 16px; display: flex; flex-direction: column; gap: 9px; }
-.stat-row { display: flex; align-items: center; gap: 10px; }
-.stat-lbl { font-family: var(--mono); font-size: 10px; color: var(--t3); width: 28px; flex-shrink: 0; }
-.stat-bar-bg { flex: 1; height: 5px; background: var(--p3); border-radius: 99px; overflow: hidden; }
-.stat-bar { height: 100%; border-radius: 99px; transition: width .5s ease; }
-.bar-a { background: linear-gradient(90deg, #fb923c, #fbbf24); }
-.bar-d { background: linear-gradient(90deg, #60a5fa, #818cf8); }
-.bar-s { background: linear-gradient(90deg, #34d399, #10b981); }
-.stat-val { font-family: var(--mono); font-size: 12px; font-weight: 700; width: 28px; text-align: right; }
-
-/* ── RIGHT SIDE ── */
-.right { display: flex; flex-direction: column; gap: 14px; }
-
-/* ── CARD / PANEL ── */
-.card { background: var(--p1); border: 1px solid var(--b1); border-radius: var(--rad); overflow: hidden; }
-.card-head {
-  display: flex; align-items: center; gap: 8px;
-  padding: 11px 16px; border-bottom: 1px solid var(--b1);
-}
-.card-title { font-family: var(--mono); font-size: 10px; color: var(--t3); text-transform: uppercase; letter-spacing: .1em; }
-.card-body { padding: 16px; }
-
-/* ── CONTROLS ── */
-.ctrl-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
-@media (max-width: 560px) { .ctrl-grid { grid-template-columns: 1fr 1fr; } }
-.ctrl-block label { display: block; font-size: 10px; font-family: var(--mono); color: var(--t3); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 6px; }
-.ctrl-block select,
-.ctrl-block input[type="number"] {
-  width: 100%; background: var(--p2); border: 1px solid var(--b2);
-  border-radius: var(--rads); color: var(--t1);
-  font-family: var(--body); font-size: 13px;
-  padding: 8px 10px; outline: none;
-  transition: border-color .15s;
-  -webkit-appearance: none;
-}
-.ctrl-block select:focus,
-.ctrl-block input[type="number"]:focus { border-color: var(--acc); }
-
-.iv-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
-.iv-btn {
-  padding: 7px 4px; font-size: 12px; font-family: var(--mono); text-align: center;
-  background: var(--p2); border: 1px solid var(--b2); border-radius: var(--rads);
-  color: var(--t2); cursor: pointer; transition: all .13s;
-}
-.iv-btn:hover { border-color: var(--acc); color: var(--acc); }
-.iv-btn.sel { background: rgba(240,196,25,.1); border-color: var(--acc); color: var(--acc); }
-
-/* ── LEVEL SLIDERS ── */
-.lv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
-.lv-block label { display: block; font-size: 10px; font-family: var(--mono); color: var(--t3); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 7px; }
-.lv-num { font-family: var(--mono); font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 8px; }
-.lv-num.is-tgt { color: var(--acc); }
-input[type="range"] {
-  -webkit-appearance: none; width: 100%; height: 4px;
-  background: var(--p3); border-radius: 99px; outline: none; cursor: pointer;
-}
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none; width: 15px; height: 15px;
-  background: var(--acc); border-radius: 50%;
-  border: 2.5px solid var(--bg); box-shadow: 0 0 6px rgba(240,196,25,.35);
-}
-
-/* ── UPLIFT BANNER ── */
-.uplift {
-  display: flex; align-items: center; gap: 14px;
-  margin-top: 16px; padding: 13px 16px;
-  background: rgba(240,196,25,.05);
-  border: 1px solid rgba(240,196,25,.15);
-  border-radius: var(--rads);
-}
-.uplift-pct { font-family: var(--mono); font-size: 30px; font-weight: 700; color: var(--acc); line-height: 1; white-space: nowrap; }
-.uplift-pct small { font-size: 15px; }
-.uplift-info { font-size: 12px; color: var(--t2); line-height: 1.7; }
-.uplift-info b { color: var(--t1); font-weight: 600; }
-
-/* ── MOVE TABLE ── */
-.move-tbl { width: 100%; border-collapse: collapse; }
-.move-tbl th {
-  font-family: var(--mono); font-size: 10px; color: var(--t3);
-  text-transform: uppercase; letter-spacing: .06em;
-  text-align: left; padding: 8px 10px;
-  border-bottom: 1px solid var(--b1); font-weight: 400;
-}
-.move-tbl th:not(:first-child) { text-align: right; }
-.move-tbl td { padding: 11px 10px; border-bottom: 1px solid var(--b1); vertical-align: middle; }
-.move-tbl tr:last-child td { border-bottom: none; }
-.move-tbl tr:hover td { background: rgba(255,255,255,.015); }
-.move-tbl td:not(:first-child) { text-align: right; font-family: var(--mono); }
-.mv-name { font-size: 13px; font-weight: 600; }
-.mv-badge {
-  font-size: 9px; font-family: var(--mono); padding: 2px 6px;
-  border-radius: 3px; margin-left: 6px; vertical-align: middle;
-}
-.mv-fast   { background: rgba(79,179,246,.1); color: var(--bl); border: 1px solid rgba(79,179,246,.2); }
-.mv-charge { background: rgba(183,148,244,.1); color: var(--pu); border: 1px solid rgba(183,148,244,.2); }
-.mv-meta { font-size: 10px; color: var(--t3); margin-top: 2px; }
-.mv-ttype { display: inline-flex; padding: 1px 7px; border-radius: 99px; font-size: 9px; font-weight: 600; border: 1px solid; margin-right: 4px; }
-.stab-star { color: var(--acc); font-size: 9px; margin-left: 2px; vertical-align: middle; }
-.d-cur { color: var(--t2); }
-.d-tgt { color: var(--acc); font-weight: 700; }
-.d-sub { font-size: 10px; color: var(--t3); margin-top: 1px; }
-.d-diff-up { display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 3px; background: rgba(61,214,140,.1); color: var(--gr); border: 1px solid rgba(61,214,140,.2); }
-.d-diff-eq { color: var(--t3); font-size: 10px; }
-
-/* ── CPM TABLE ── */
-.cpm-scroll { max-height: 360px; overflow-y: auto; }
-.cpm-scroll::-webkit-scrollbar { width: 3px; }
-.cpm-scroll::-webkit-scrollbar-thumb { background: var(--p3); border-radius: 99px; }
-.cpm-tbl { width: 100%; border-collapse: collapse; }
-.cpm-tbl th {
-  font-family: var(--mono); font-size: 10px; color: var(--t3); text-transform: uppercase;
-  letter-spacing: .06em; padding: 8px 10px; border-bottom: 1px solid var(--b1);
-  font-weight: 400; text-align: left;
-  position: sticky; top: 0; background: var(--p1);
-}
-.cpm-tbl th:not(:first-child) { text-align: right; }
-.cpm-tbl td { padding: 7px 10px; border-bottom: 1px solid rgba(255,255,255,.03); font-size: 12px; }
-.cpm-tbl td:not(:first-child) { text-align: right; font-family: var(--mono); }
-.cpm-tbl tr:last-child td { border-bottom: none; }
-.row-cur td { background: rgba(79,179,246,.06); color: var(--bl); font-weight: 600; }
-.row-tgt td { background: rgba(240,196,25,.06); color: var(--acc); font-weight: 600; }
-.row-both td { background: rgba(183,148,244,.08); color: var(--pu); font-weight: 600; }
-.lv-int { font-weight: 700; }
-
-/* ── FORMULA ── */
-.formula {
-  background: var(--p2); border-left: 2px solid var(--acc);
-  border-radius: 0 var(--rads) var(--rads) 0;
-  padding: 13px 16px; font-family: var(--mono);
-  font-size: 11px; color: var(--t2); line-height: 2.1;
-}
-.formula .y { color: var(--acc); }
-.formula .b { color: var(--bl); }
-.formula .g { color: var(--t3); font-size: 10px; }
-
-/* ── UTILS ── */
-.empty { font-family: var(--mono); font-size: 11px; color: var(--t3); padding: 8px 0; }
-.spin { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--p3); border-top-color: var(--acc); border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle; margin-right: 6px; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.init-msg { padding: 50px 20px; text-align: center; font-family: var(--mono); font-size: 11px; color: var(--t3); }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pokémon GO 딜 차이 계산기</title>
+  <style>
+    :root{
+      --bg:#0b1220;--panel:#111827;--panel2:#0f172a;--line:#243041;
+      --text:#e5eefc;--muted:#9db0cb;--accent:#38bdf8;--good:#86efac;--bad:#fda4af;--warn:#fcd34d;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#08101d,#0b1220);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif}
+    .wrap{width:min(1280px,calc(100% - 24px));margin:20px auto 32px}
+    .card{background:rgba(15,23,42,.88);border:1px solid rgba(125,211,252,.14);border-radius:18px;padding:16px;margin-bottom:16px}
+    .hero{display:grid;grid-template-columns:1.35fr 1fr;gap:16px}
+    h1,h2,h3,h4,p{margin:0}
+    .muted,.empty,.note li,#debug{color:var(--muted)}
+    .eyebrow{color:#7dd3fc;font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-size:.82rem;margin-bottom:8px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .controls{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+    .controls.small{grid-template-columns:repeat(5,minmax(0,1fr))}
+    .controls.moves{grid-template-columns:repeat(2,minmax(0,1fr))}
+    label{display:block;margin:0 0 6px;color:var(--muted);font-size:.92rem}
+    input,select,button{width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:#09111e;color:var(--text);font-size:.96rem}
+    input:focus,select:focus,button:focus{outline:2px solid rgba(56,189,248,.32);border-color:var(--accent)}
+    button{cursor:pointer}
+    .search{position:relative}
+    .dropdown{position:absolute;top:calc(100% + 8px);left:0;right:0;display:none;z-index:30;max-height:280px;overflow:auto;border-radius:14px;background:rgba(8,16,29,.98);border:1px solid rgba(125,211,252,.14)}
+    .dropdown.open{display:block}
+    .item{padding:11px 12px;border-bottom:1px solid rgba(157,176,203,.08);cursor:pointer}
+    .item:last-child{border-bottom:none}
+    .item:hover,.item.active{background:rgba(56,189,248,.1)}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .chip,.badge{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;border:1px solid rgba(125,211,252,.14);background:rgba(125,211,252,.08);font-size:.86rem}
+    .pk-card{margin-top:14px;min-height:140px}
+    .pk-card.empty,.panel.empty,.table-empty,.error-box{display:grid;place-items:center;text-align:center;padding:18px;border:1px dashed rgba(157,176,203,.22);border-radius:14px;color:var(--muted)}
+    .pk-inner{display:grid;grid-template-columns:120px 1fr;gap:16px;align-items:center}
+    .art{display:grid;place-items:center;min-height:120px;padding:10px;border-radius:16px;background:radial-gradient(circle at 30% 20%,rgba(125,211,252,.18),transparent 55%), rgba(255,255,255,.03);border:1px solid rgba(125,211,252,.12)}
+    .art img{max-width:96px;width:100%;height:auto;object-fit:contain}
+    .stats3,.sumgrid,.valgrid{display:grid;gap:10px}
+    .stats3{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:12px}
+    .sumgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .valgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .box{border:1px solid rgba(125,211,252,.12);background:rgba(255,255,255,.025);border-radius:14px;padding:12px}
+    .box span,.box small{display:block;color:var(--muted);font-size:.84rem}
+    .box strong{display:block;font-size:1.12rem;margin-top:4px}
+    .panel{min-height:220px}
+    .sub{display:grid;gap:12px}
+    .good{color:var(--good)} .bad{color:var(--bad)} .warn{color:var(--warn)}
+    .formula{margin-top:12px;padding:12px;border-radius:14px;background:rgba(8,16,29,.55);border:1px solid rgba(157,176,203,.08);color:var(--muted)}
+    .table-wrap{overflow:auto;border-radius:16px;border:1px solid rgba(125,211,252,.12)}
+    table{width:100%;min-width:760px;border-collapse:collapse}
+    th,td{padding:11px 12px;border-bottom:1px solid rgba(157,176,203,.08);text-align:right}
+    th:first-child,td:first-child{text-align:left}
+    thead th{position:sticky;top:0;background:#0a1525}
+    .loading{display:flex;align-items:center;gap:12px}.spin{width:18px;height:18px;border:2px solid rgba(125,211,252,.22);border-top-color:var(--accent);border-radius:50%;animation:rot 1s linear infinite}@keyframes rot{to{transform:rotate(360deg)}}
+    .hide{display:none!important}
+    #debug{margin-top:10px;font-size:.9rem;line-height:1.45}
+    @media (max-width:1100px){.hero,.grid2,.controls,.controls.small,.controls.moves,.sumgrid,.valgrid,.stats3,.pk-inner{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
-<div class="app">
-
-  <!-- Header -->
-  <header class="hdr">
-    <div class="logo">
-      <div class="logo-top"></div>
-      <div class="logo-bot"></div>
-      <div class="logo-band"></div>
-      <div class="logo-btn"></div>
+<div class="wrap">
+  <section class="hero">
+    <div class="card">
+      <div class="eyebrow">단일 HTML · GitHub Pages 바로 업로드</div>
+      <h1>Pokémon GO 딜 차이 계산기</h1>
+      <p class="muted" style="margin-top:10px">포켓몬고 종족값·기술·타입 상성 데이터를 불러와 현재 레벨과 목표 레벨의 공격력 차이, 실제 기술 단발 데미지 차이, 1~51 전체 레벨 표를 확인합니다.</p>
     </div>
-    <div class="hdr-text">
-      <h1>PoGO · Damage Calc</h1>
-      <p>레벨별 딜 계산기 &nbsp;—&nbsp; Game Master 데이터 내장</p>
+    <div class="card">
+      <h2>적용 계산식</h2>
+      <p class="muted" style="margin-top:10px"><strong>공격력</strong> = (공격 종족값 + 공격 IV) × CPM</p>
+      <p class="muted"><strong>방어력</strong> = (방어 종족값 + 방어 IV) × CPM</p>
+      <p class="muted"><strong>HP</strong> = floor((체력 종족값 + 체력 IV) × CPM)</p>
+      <p class="muted"><strong>CP</strong> = floor((공격 × √방어 × √HP) / 10), 최소 10</p>
+      <p class="muted"><strong>PvE</strong> = floor(0.5 × 위력 × 공격/방어 × STAB × 상성 × 날씨 × 프렌드) + 1</p>
+      <p class="muted"><strong>PvP</strong> = floor(0.5 × 위력 × 1.3 × 공격/방어 × STAB × 상성) + 1</p>
     </div>
-    <div class="hdr-tags">
-      <span class="tag tag-y">Game Master</span>
-      <span class="tag tag-b">PokeAPI</span>
-    </div>
-  </header>
+  </section>
 
-  <!-- Search -->
-  <div class="search-wrap">
-    <span class="search-icon">⌕</span>
-    <input id="searchQ" type="text" placeholder="포켓몬 이름 또는 번호 검색… (가디안, 282)" autocomplete="off" spellcheck="false">
-    <div class="dropdown" id="dropdown"></div>
-  </div>
-
-  <!-- Main layout -->
-  <div class="layout">
-
-    <!-- Left: Pokémon card -->
-    <div>
-      <div class="poke-card" id="pokeCard">
-        <div class="init-msg"><span class="spin"></span>초기화 중…</div>
-      </div>
-
-      <!-- Formula -->
-      <div class="card" style="margin-top:14px">
-        <div class="card-head"><span class="card-title">계산식</span></div>
-        <div class="card-body">
-          <div class="formula">
-            Damage = Floor(<br>
-            &nbsp;&nbsp;<span class="y">0.5</span> × <span class="b">위력</span> × (Atk ÷ Def)<br>
-            &nbsp;&nbsp;× <span class="y">STAB</span> × 타입상성<br>
-            ) + 1<br><br>
-            Atk = (<span class="y">기본공격</span> + <span class="b">IV</span>) × <span class="y">CPM</span><br>
-            <span class="g">STAB = 1.2 (자속 보정) &nbsp;·&nbsp; 방어자 DEF 직접 설정</span>
-          </div>
-        </div>
+  <section class="card" id="loadingCard">
+    <div class="loading">
+      <div class="spin"></div>
+      <div>
+        <strong id="loadingTitle">데이터 불러오는 중…</strong>
+        <p id="loadingText" class="muted">포켓몬고 API와 이름 인덱스를 준비하고 있습니다.</p>
+        <div id="debug"></div>
       </div>
     </div>
+  </section>
 
-    <!-- Right -->
-    <div class="right">
-
-      <!-- Settings -->
-      <div class="card">
-        <div class="card-head"><span class="card-title">⚙&nbsp; 설정</span></div>
-        <div class="card-body">
-          <div class="ctrl-grid">
-            <div class="ctrl-block">
-              <label>공격 IV &nbsp;<b id="ivVal" style="color:var(--acc);font-size:13px">15</b></label>
-              <div style="padding:4px 0">
-                <input type="range" id="ivRange" min="0" max="15" step="1" value="15" style="margin-bottom:4px">
-                <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--t3)">
-                  <span>0</span><span>5</span><span>10</span><span>15</span>
-                </div>
-              </div>
-            </div>
-            <div class="ctrl-block">
-              <label>방어자 DEF</label>
-              <input type="number" id="defInput" value="100" min="1" max="600">
-            </div>
-            <div class="ctrl-block">
-              <label>타입 상성</label>
-              <select id="effInput">
-                <option value="2.56">×2.56 (2중 효과)</option>
-                <option value="1.6">×1.6 (효과 굉장)</option>
-                <option value="1.0" selected>×1.0 (보통)</option>
-                <option value="0.625">×0.625 (효과 미미)</option>
-                <option value="0.390625">×0.39 (2중 미미)</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="lv-grid">
-            <div class="lv-block">
-              <label>현재 레벨</label>
-              <div class="lv-num" id="curNum">40</div>
-              <input type="range" id="curRange" min="1" max="99" value="79">
-            </div>
-            <div class="lv-block">
-              <label>목표 레벨</label>
-              <div class="lv-num is-tgt" id="tgtNum">50</div>
-              <input type="range" id="tgtRange" min="1" max="99" value="99">
-            </div>
-          </div>
-
-          <div class="uplift">
-            <div class="uplift-pct" id="upliftPct">—<small>%</small></div>
-            <div class="uplift-info" id="upliftInfo">레벨을 설정하세요</div>
-          </div>
-        </div>
+  <section class="grid2">
+    <div class="card">
+      <h2>공격 포켓몬</h2>
+      <p class="muted" style="margin-top:6px">한글 1글자 이상 입력하면 드롭다운 검색이 뜹니다. 한국어 이름 로딩이 실패하면 영어 이름으로라도 검색됩니다.</p>
+      <div class="search" style="margin-top:12px">
+        <label for="attackerSearch">포켓몬 이름</label>
+        <input id="attackerSearch" type="text" placeholder="예: 메타그로스, 루카리오, 망나뇽" autocomplete="off" />
+        <div id="attackerDropdown" class="dropdown"></div>
       </div>
+      <div id="attackerCard" class="pk-card empty"><p>공격 포켓몬을 선택하세요.</p></div>
+    </div>
 
-      <!-- Moves -->
-      <div class="card">
-        <div class="card-head"><span class="card-title">⚔&nbsp; 기술별 데미지</span></div>
-        <div id="movePanel" class="card-body">
-          <div class="empty">포켓몬을 검색하면 기술 정보가 표시됩니다.</div>
-        </div>
+    <div class="card">
+      <h2>대상 포켓몬</h2>
+      <p class="muted" style="margin-top:6px">대상을 선택하면 실제 단발 데미지 비교를 계산합니다.</p>
+      <div class="search" style="margin-top:12px">
+        <label for="defenderSearch">포켓몬 이름</label>
+        <input id="defenderSearch" type="text" placeholder="예: 해피너스, 뮤츠, 가이오가" autocomplete="off" />
+        <div id="defenderDropdown" class="dropdown"></div>
       </div>
+      <div id="defenderCard" class="pk-card empty"><p>대상 포켓몬을 선택하면 실제 기술 데미지를 계산합니다.</p></div>
+    </div>
+  </section>
 
-      <!-- CPM Table -->
-      <div class="card">
-        <div class="card-head"><span class="card-title">📊&nbsp; 레벨별 실질 공격력</span></div>
-        <div class="cpm-scroll">
-          <div id="cpmPanel" style="padding:14px">
-            <div class="empty">포켓몬을 선택하면 표시됩니다.</div>
-          </div>
-        </div>
+  <section class="card">
+    <h2>계산 설정</h2>
+    <div class="controls" style="margin-top:14px">
+      <div>
+        <label for="mode">배틀 모드</label>
+        <select id="mode">
+          <option value="pve">레이드 / 체육관 (PvE)</option>
+          <option value="pvp">트레이너배틀 (PvP)</option>
+        </select>
       </div>
+      <div>
+        <label for="currentLevel">현재 레벨</label>
+        <select id="currentLevel"></select>
+      </div>
+      <div>
+        <label for="targetLevel">목표 레벨</label>
+        <select id="targetLevel"></select>
+      </div>
+      <div>
+        <label for="defenderLevel">대상 레벨</label>
+        <select id="defenderLevel"></select>
+      </div>
+      <div>
+        <label for="friendBoost">프렌드 보너스 (PvE)</label>
+        <select id="friendBoost">
+          <option value="1">없음</option>
+          <option value="1.03">친구 (1.03)</option>
+          <option value="1.05">좋은 친구 (1.05)</option>
+          <option value="1.07">울트라 친구 (1.07)</option>
+          <option value="1.1">베스트 친구 (1.10)</option>
+        </select>
+      </div>
+      <div>
+        <label for="weather">날씨 (PvE)</label>
+        <select id="weather">
+          <option value="">없음</option>
+          <option value="Clear">맑음</option>
+          <option value="Rainy">비</option>
+          <option value="Partly Cloudy">구름 조금</option>
+          <option value="Cloudy">흐림</option>
+          <option value="Windy">강풍</option>
+          <option value="Snow">눈</option>
+          <option value="Fog">안개</option>
+        </select>
+      </div>
+    </div>
 
-    </div><!-- /right -->
-  </div><!-- /layout -->
-</div><!-- /app -->
+    <div class="controls small" style="margin-top:12px">
+      <div><label for="atkIvAtk">공격 IV</label><input id="atkIvAtk" type="number" min="0" max="15" step="1" value="15" /></div>
+      <div><label for="atkIvDef">방어 IV</label><input id="atkIvDef" type="number" min="0" max="15" step="1" value="15" /></div>
+      <div><label for="atkIvSta">체력 IV</label><input id="atkIvSta" type="number" min="0" max="15" step="1" value="15" /></div>
+      <div><label for="defIvDef">대상 방어 IV</label><input id="defIvDef" type="number" min="0" max="15" step="1" value="15" /></div>
+      <div><label for="defIvSta">대상 체력 IV</label><input id="defIvSta" type="number" min="0" max="15" step="1" value="15" /></div>
+    </div>
+
+    <div class="controls moves" style="margin-top:12px">
+      <div><label for="fastMove">노말 기술</label><select id="fastMove"><option value="">공격 포켓몬을 먼저 선택하세요</option></select></div>
+      <div><label for="chargedMove">스페셜 기술</label><select id="chargedMove"><option value="">공격 포켓몬을 먼저 선택하세요</option></select></div>
+    </div>
+  </section>
+
+  <section class="grid2">
+    <div class="card">
+      <h2>레벨 비교 요약</h2>
+      <div id="summaryPanel" class="panel empty" style="margin-top:12px"><p>공격 포켓몬을 선택하면 계산 결과가 표시됩니다.</p></div>
+    </div>
+
+    <div class="card">
+      <h2>기술 데미지 비교</h2>
+      <div id="damagePanel" class="panel empty" style="margin-top:12px"><p>공격 포켓몬, 기술, 대상 포켓몬을 선택하세요.</p></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>1 ~ 51 전체 레벨 표</h2>
+    <div class="table-wrap" style="margin-top:12px">
+      <table>
+        <thead>
+          <tr><th>레벨</th><th>CPM</th><th>공격력</th><th>방어력</th><th>HP</th><th>CP</th></tr>
+        </thead>
+        <tbody id="levelBody"><tr><td colspan="6" class="table-empty">공격 포켓몬을 선택하면 표가 채워집니다.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+</div>
 
 <script>
-// ═══════════════════════════════════════════════════════
-// CPM TABLE  (Game Master, Lv1~50, 0.5 단위)
-// ═══════════════════════════════════════════════════════
-const CPM = {
-  1:.094,1.5:.13514,2:.16640,2.5:.19265,3:.21573,3.5:.23657,4:.25572,4.5:.27353,
-  5:.29025,5.5:.30606,6:.32109,6.5:.33545,7:.34921,7.5:.36246,8:.37524,8.5:.38759,
-  9:.39957,9.5:.41119,10:.42250,10.5:.43350,11:.44420,11.5:.45461,12:.46475,12.5:.47462,
-  13:.48423,13.5:.49359,14:.50271,14.5:.51160,15:.52027,15.5:.52872,16:.53695,16.5:.54498,
-  17:.55281,17.5:.56045,18:.56791,18.5:.57518,19:.58229,19.5:.58922,20:.59740,20.5:.60400,
-  21:.61051,21.5:.61694,22:.62328,22.5:.62954,23:.63572,23.5:.64182,24:.64784,24.5:.65378,
-  25:.65964,25.5:.66542,26:.67113,26.5:.67676,27:.68232,27.5:.68780,28:.69321,28.5:.69856,
-  29:.70383,29.5:.70905,30:.71300,30.5:.71690,31:.72075,31.5:.72456,32:.72832,32.5:.73204,
-  33:.73572,33.5:.73936,34:.74296,34.5:.74652,35:.75004,35.5:.75352,36:.75696,36.5:.76036,
-  37:.76372,37.5:.76704,38:.77031,38.5:.77354,39:.77673,39.5:.77988,40:.79030,40.5:.79530,
-  41:.80030,41.5:.80530,42:.81030,42.5:.81530,43:.82030,43.5:.82530,44:.83030,44.5:.83530,
-  45:.84030,45.5:.84530,46:.85030,46.5:.85530,47:.86030,47.5:.86530,48:.87030,48.5:.87530,
-  49:.88030,49.5:.88530,50:.89030,
-  50.5:.89530,51:.90030
-};
-const LVS = Object.keys(CPM).map(Number).sort((a,b)=>a-b);
-const s2l = v => LVS[v-1];
-const l2s = l => LVS.indexOf(l)+1;
+(() => {
+  const CPM = {1:0.0939999967813491,1.5:0.135137430784308,2:0.166397869586944,2.5:0.192650914456886,3:0.215732470154762,3.5:0.236572655026622,4:0.255720049142837,4.5:0.273530381100769,5:0.29024988412857,5.5:0.306057381335773,6:0.321087598800659,6.5:0.335445032295077,7:0.349212676286697,7.5:0.36245774877879,8:0.375235587358474,8.5:0.387592411085168,9:0.399567276239395,9.5:0.41119354951725,10:0.422500014305114,10.5:0.432926413410414,11:0.443107545375824,11.5:0.453059953871985,12:0.46279838681221,12.5:0.472336077786704,13:0.481684952974319,13.5:0.490855810259008,14:0.499858438968658,14.5:0.508701756943992,15:0.517393946647644,15.5:0.525942508771329,16:0.534354329109191,16.5:0.542635762230353,17:0.550792694091796,17.5:0.558830599438087,18:0.566754519939422,18.5:0.574569148039264,19:0.582278907299041,19.5:0.589887911977272,20:0.59740000963211,20.5:0.604823657502073,21:0.61215728521347,21.5:0.61940411056605,22:0.626567125320434,22.5:0.633649181622743,23:0.640652954578399,23.5:0.647580963301656,24:0.654435634613037,24.5:0.661219263506722,25:0.667934000492096,25.5:0.674581899290818,26:0.681164920330047,26.5:0.687684905887771,27:0.694143652915954,27.5:0.700542893277978,28:0.706884205341339,28.5:0.713169102333341,29:0.719399094581604,29.5:0.725575616972598,30:0.731700003147125,30.5:0.734741011137376,31:0.737769484519958,31.5:0.740785574597326,32:0.743789434432983,32.5:0.746781208702482,33:0.749761044979095,33.5:0.752729105305821,34:0.75568550825119,34.5:0.758630366519684,35:0.761563837528228,35.5:0.764486065255226,36:0.767397165298461,36.5:0.77029727397159,37:0.77318650484085,37.5:0.776064945942412,38:0.778932750225067,38.5:0.781790064808426,39:0.784636974334716,39.5:0.787473583646825,40:0.790300011634826,40.5:0.792803950958807,41:0.795300006866455,41.5:0.79780392148697,42:0.800300002098083,42.5:0.802803892322847,43:0.805299997329711,43.5:0.807803863460723,44:0.81029999256134,44.5:0.812803834895026,45:0.815299987792968,45.5:0.817803806620319,46:0.820299983024597,46.5:0.822803778631297,47:0.825299978256225,47.5:0.827803750922782,48:0.830299973487854,48.5:0.832803753381377,49:0.835300028324127,49.5:0.837803755931569,50:0.840300023555755,50.5:0.842803729034748,51:0.845300018787384};
+  const LEVELS = Object.keys(CPM).map(Number);
+  const TYPE_KO = {Normal:"노말",Fire:"불꽃",Water:"물",Electric:"전기",Grass:"풀",Ice:"얼음",Fighting:"격투",Poison:"독",Ground:"땅",Flying:"비행",Psychic:"에스퍼",Bug:"벌레",Rock:"바위",Ghost:"고스트",Dragon:"드래곤",Dark:"악",Steel:"강철",Fairy:"페어리"};
+  const WEATHER_KO = {Clear:"맑음",Rainy:"비","Partly Cloudy":"구름 조금",Cloudy:"흐림",Windy:"강풍",Snow:"눈",Fog:"안개"};
+  const API = {
+    released:"https://pogoapi.net/api/v1/released_pokemon.json",
+    names:"https://pogoapi.net/api/v1/pokemon_names.json",
+    stats:"https://pogoapi.net/api/v1/pokemon_stats.json",
+    types:"https://pogoapi.net/api/v1/pokemon_types.json",
+    moves:"https://pogoapi.net/api/v1/current_pokemon_moves.json",
+    fast:"https://pogoapi.net/api/v1/fast_moves.json",
+    charged:"https://pogoapi.net/api/v1/charged_moves.json",
+    pvpFast:"https://pogoapi.net/api/v1/pvp_fast_moves.json",
+    pvpCharged:"https://pogoapi.net/api/v1/pvp_charged_moves.json",
+    effect:"https://pogoapi.net/api/v1/type_effectiveness.json",
+    weather:"https://pogoapi.net/api/v1/weather_boosts.json",
+    speciesCsv:"https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/pokemon_species.csv",
+    speciesNamesCsv:"https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/pokemon_species_names.csv",
+    artwork:(id)=>`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`
+  };
 
-// ═══════════════════════════════════════════════════════
-// POKEMON DATA  (Game Master 기준 스탯)
-// ═══════════════════════════════════════════════════════
-const PKM = [
-{id:1,n:"Bulbasaur",a:118,d:111,s:128},{id:2,n:"Ivysaur",a:151,d:143,s:155},
-{id:3,n:"Venusaur",a:198,d:189,s:190},{id:4,n:"Charmander",a:116,d:93,s:118},
-{id:5,n:"Charmeleon",a:158,d:126,s:151},{id:6,n:"Charizard",a:223,d:173,s:186},
-{id:7,n:"Squirtle",a:94,d:121,s:127},{id:8,n:"Wartortle",a:126,d:155,s:153},
-{id:9,n:"Blastoise",a:171,d:207,s:188},{id:12,n:"Butterfree",a:167,d:137,s:155},
-{id:15,n:"Beedrill",a:169,d:130,s:163},{id:16,n:"Pidgey",a:85,d:76,s:120},
-{id:18,n:"Pidgeot",a:166,d:154,s:195},{id:25,n:"Pikachu",a:112,d:96,s:111},
-{id:26,n:"Raichu",a:193,d:151,s:155},{id:31,n:"Nidoqueen",a:180,d:174,s:207},
-{id:34,n:"Nidoking",a:204,d:156,s:190},{id:36,n:"Clefable",a:178,d:162,s:216},
-{id:38,n:"Ninetales",a:169,d:190,s:177},{id:40,n:"Wigglytuff",a:156,d:90,s:295},
-{id:42,n:"Golbat",a:161,d:150,s:181},{id:45,n:"Vileplume",a:202,d:167,s:181},
-{id:49,n:"Venomoth",a:179,d:143,s:163},{id:51,n:"Dugtrio",a:167,d:147,s:111},
-{id:55,n:"Golduck",a:191,d:163,s:190},{id:57,n:"Primeape",a:207,d:138,s:163},
-{id:59,n:"Arcanine",a:227,d:166,s:207},{id:62,n:"Poliwrath",a:182,d:187,s:207},
-{id:65,n:"Alakazam",a:271,d:167,s:146},{id:68,n:"Machamp",a:234,d:162,s:207},
-{id:71,n:"Victreebel",a:207,d:135,s:190},{id:73,n:"Tentacruel",a:166,d:209,s:190},
-{id:76,n:"Golem",a:211,d:198,s:190},{id:78,n:"Rapidash",a:207,d:162,s:163},
-{id:80,n:"Slowbro",a:177,d:180,s:216},{id:82,n:"Magneton",a:223,d:169,s:137},
-{id:85,n:"Dodrio",a:218,d:140,s:155},{id:89,n:"Muk",a:190,d:172,s:233},
-{id:91,n:"Cloyster",a:186,d:256,s:137},{id:94,n:"Gengar",a:261,d:149,s:163},
-{id:97,n:"Hypno",a:144,d:193,s:198},{id:99,n:"Kingler",a:240,d:181,s:146},
-{id:101,n:"Electrode",a:173,d:173,s:155},{id:103,n:"Exeggutor",a:233,d:158,s:216},
-{id:105,n:"Marowak",a:144,d:186,s:137},{id:106,n:"Hitmonlee",a:224,d:181,s:137},
-{id:107,n:"Hitmonchan",a:193,d:197,s:137},{id:110,n:"Weezing",a:174,d:197,s:163},
-{id:112,n:"Rhydon",a:222,d:171,s:233},{id:113,n:"Chansey",a:60,d:176,s:487},
-{id:114,n:"Tangela",a:183,d:169,s:163},{id:115,n:"Kangaskhan",a:181,d:165,s:233},
-{id:121,n:"Starmie",a:210,d:184,s:155},{id:122,n:"Mr. Mime",a:192,d:205,s:120},
-{id:123,n:"Scyther",a:218,d:170,s:172},{id:124,n:"Jynx",a:223,d:95,s:163},
-{id:125,n:"Electabuzz",a:198,d:158,s:163},{id:126,n:"Magmar",a:206,d:154,s:163},
-{id:127,n:"Pinsir",a:238,d:182,s:163},{id:130,n:"Gyarados",a:237,d:186,s:216},
-{id:131,n:"Lapras",a:165,d:174,s:277},{id:134,n:"Vaporeon",a:205,d:161,s:277},
-{id:135,n:"Jolteon",a:232,d:182,s:163},{id:136,n:"Flareon",a:246,d:179,s:163},
-{id:141,n:"Kabutops",a:220,d:186,s:155},{id:142,n:"Aerodactyl",a:221,d:159,s:190},
-{id:143,n:"Snorlax",a:190,d:169,s:330},{id:144,n:"Articuno",a:192,d:236,s:207},
-{id:145,n:"Zapdos",a:253,d:185,s:207},{id:146,n:"Moltres",a:251,d:181,s:207},
-{id:149,n:"Dragonite",a:263,d:198,s:209},{id:150,n:"Mewtwo",a:300,d:182,s:214},
-{id:151,n:"Mew",a:210,d:210,s:225},{id:154,n:"Meganium",a:168,d:202,s:190},
-{id:157,n:"Typhlosion",a:223,d:173,s:186},{id:160,n:"Feraligatr",a:205,d:188,s:198},
-{id:169,n:"Crobat",a:194,d:178,s:198},{id:181,n:"Ampharos",a:211,d:169,s:207},
-{id:184,n:"Azumarill",a:112,d:152,s:225},{id:196,n:"Espeon",a:261,d:175,s:163},
-{id:197,n:"Umbreon",a:126,d:240,s:216},{id:199,n:"Slowking",a:177,d:180,s:216},
-{id:212,n:"Scizor",a:236,d:191,s:172},{id:214,n:"Heracross",a:234,d:189,s:175},
-{id:217,n:"Ursaring",a:236,d:144,s:207},{id:221,n:"Piloswine",a:181,d:138,s:225},
-{id:227,n:"Skarmory",a:148,d:260,s:163},{id:229,n:"Houndoom",a:224,d:144,s:163},
-{id:230,n:"Kingdra",a:194,d:194,s:181},{id:232,n:"Donphan",a:214,d:185,s:207},
-{id:237,n:"Hitmontop",a:173,d:207,s:137},{id:242,n:"Blissey",a:129,d:169,s:510},
-{id:243,n:"Raikou",a:241,d:195,s:207},{id:244,n:"Entei",a:235,d:176,s:230},
-{id:245,n:"Suicune",a:180,d:235,s:225},{id:248,n:"Tyranitar",a:251,d:207,s:225},
-{id:249,n:"Lugia",a:193,d:310,s:235},{id:250,n:"Ho-Oh",a:239,d:244,s:214},
-{id:251,n:"Celebi",a:210,d:210,s:225},{id:254,n:"Sceptile",a:223,d:169,s:172},
-{id:257,n:"Blaziken",a:239,d:141,s:190},{id:260,n:"Swampert",a:208,d:175,s:225},
-{id:272,n:"Ludicolo",a:173,d:176,s:207},{id:275,n:"Shiftry",a:200,d:121,s:181},
-{id:279,n:"Pelipper",a:130,d:189,s:186},{id:280,n:"Ralts",a:79,d:59,s:93},
-{id:281,n:"Kirlia",a:117,d:90,s:116},{id:282,n:"Gardevoir",a:237,d:195,s:169},
-{id:286,n:"Breloom",a:241,d:144,s:155},{id:289,n:"Slaking",a:290,d:183,s:284},
-{id:297,n:"Hariyama",a:209,d:114,s:302},{id:302,n:"Sableye",a:141,d:141,s:137},
-{id:303,n:"Mawile",a:155,d:155,s:137},{id:306,n:"Aggron",a:198,d:257,s:172},
-{id:308,n:"Medicham",a:121,d:152,s:155},{id:310,n:"Manectric",a:201,d:142,s:163},
-{id:315,n:"Roselia",a:186,d:148,s:120},{id:319,n:"Sharpedo",a:243,d:83,s:172},
-{id:323,n:"Camerupt",a:194,d:136,s:172},{id:330,n:"Flygon",a:205,d:168,s:190},
-{id:334,n:"Altaria",a:141,d:201,s:181},{id:342,n:"Crawdaunt",a:224,d:142,s:163},
-{id:350,n:"Milotic",a:192,d:219,s:216},{id:354,n:"Banette",a:218,d:127,s:163},
-{id:359,n:"Absol",a:246,d:120,s:163},{id:362,n:"Glalie",a:162,d:162,s:190},
-{id:365,n:"Walrein",a:182,d:176,s:242},{id:373,n:"Salamence",a:277,d:168,s:216},
-{id:376,n:"Metagross",a:257,d:228,s:190},{id:377,n:"Regirock",a:179,d:309,s:190},
-{id:378,n:"Regice",a:179,d:309,s:190},{id:379,n:"Registeel",a:143,d:285,s:190},
-{id:380,n:"Latias",a:228,d:246,s:190},{id:381,n:"Latios",a:268,d:212,s:190},
-{id:382,n:"Kyogre",a:270,d:228,s:205},{id:383,n:"Groudon",a:270,d:228,s:205},
-{id:384,n:"Rayquaza",a:284,d:170,s:213},{id:385,n:"Jirachi",a:210,d:210,s:225},
-{id:386,n:"Deoxys",a:345,d:115,s:137},{id:389,n:"Torterra",a:202,d:197,s:216},
-{id:392,n:"Infernape",a:222,d:151,s:183},{id:395,n:"Empoleon",a:210,d:213,s:197},
-{id:398,n:"Staraptor",a:234,d:140,s:198},{id:405,n:"Luxray",a:232,d:156,s:198},
-{id:407,n:"Roserade",a:243,d:185,s:155},{id:409,n:"Rampardos",a:295,d:109,s:181},
-{id:411,n:"Bastiodon",a:94,d:286,s:155},{id:419,n:"Floatzel",a:202,d:115,s:181},
-{id:423,n:"Gastrodon",a:169,d:143,s:244},{id:426,n:"Drifblim",a:180,d:134,s:312},
-{id:428,n:"Lopunny",a:156,d:194,s:163},{id:430,n:"Honchkrow",a:243,d:103,s:172},
-{id:437,n:"Bronzong",a:161,d:213,s:167},{id:442,n:"Spiritomb",a:122,d:182,s:163},
-{id:445,n:"Garchomp",a:261,d:193,s:239},{id:448,n:"Lucario",a:236,d:144,s:172},
-{id:450,n:"Hippowdon",a:201,d:191,s:239},{id:452,n:"Drapion",a:180,d:202,s:172},
-{id:454,n:"Toxicroak",a:211,d:133,s:190},{id:460,n:"Abomasnow",a:178,d:158,s:207},
-{id:461,n:"Weavile",a:243,d:171,s:172},{id:462,n:"Magnezone",a:238,d:205,s:172},
-{id:464,n:"Rhyperior",a:241,d:190,s:251},{id:465,n:"Tangrowth",a:207,d:184,s:225},
-{id:466,n:"Electivire",a:249,d:163,s:181},{id:467,n:"Magmortar",a:247,d:172,s:181},
-{id:468,n:"Togekiss",a:225,d:217,s:198},{id:470,n:"Leafeon",a:216,d:219,s:163},
-{id:471,n:"Glaceon",a:238,d:205,s:163},{id:472,n:"Gliscor",a:185,d:222,s:181},
-{id:473,n:"Mamoswine",a:247,d:146,s:242},{id:474,n:"Porygon-Z",a:264,d:150,s:198},
-{id:475,n:"Gallade",a:237,d:195,s:169},{id:477,n:"Dusknoir",a:187,d:257,s:128},
-{id:478,n:"Froslass",a:171,d:150,s:172},{id:480,n:"Uxie",a:156,d:270,s:190},
-{id:482,n:"Azelf",a:270,d:151,s:163},{id:483,n:"Dialga",a:275,d:211,s:205},
-{id:484,n:"Palkia",a:280,d:215,s:189},{id:485,n:"Heatran",a:251,d:213,s:209},
-{id:487,n:"Giratina",a:187,d:225,s:284},{id:491,n:"Darkrai",a:285,d:198,s:172},
-{id:493,n:"Arceus",a:238,d:238,s:237},{id:497,n:"Serperior",a:176,d:204,s:181},
-{id:500,n:"Emboar",a:235,d:127,s:242},{id:503,n:"Samurott",a:212,d:157,s:207},
-{id:508,n:"Stoutland",a:202,d:170,s:198},{id:521,n:"Unfezant",a:226,d:146,s:176},
-{id:523,n:"Zebstrika",a:211,d:136,s:176},{id:526,n:"Gigalith",a:226,d:201,s:198},
-{id:530,n:"Excadrill",a:255,d:129,s:242},{id:534,n:"Conkeldurr",a:243,d:158,s:233},
-{id:537,n:"Seismitoad",a:188,d:152,s:233},{id:539,n:"Sawk",a:231,d:153,s:181},
-{id:545,n:"Scolipede",a:218,d:171,s:172},{id:547,n:"Whimsicott",a:173,d:154,s:155},
-{id:553,n:"Krookodile",a:229,d:158,s:198},{id:555,n:"Darmanitan",a:263,d:114,s:233},
-{id:560,n:"Scrafty",a:163,d:222,s:172},{id:563,n:"Cofagrigus",a:148,d:257,s:167},
-{id:571,n:"Zoroark",a:222,d:147,s:163},{id:579,n:"Reuniclus",a:214,d:152,s:207},
-{id:584,n:"Vanilluxe",a:218,d:175,s:190},{id:589,n:"Escavalier",a:223,d:187,s:172},
-{id:591,n:"Amoonguss",a:152,d:150,s:242},{id:596,n:"Galvantula",a:201,d:128,s:155},
-{id:598,n:"Ferrothorn",a:158,d:232,s:179},{id:601,n:"Klinklang",a:199,d:214,s:181},
-{id:604,n:"Eelektross",a:238,d:164,s:198},{id:609,n:"Chandelure",a:271,d:182,s:155},
-{id:612,n:"Haxorus",a:284,d:172,s:186},{id:614,n:"Beartic",a:233,d:152,s:207},
-{id:620,n:"Mienshao",a:258,d:127,s:163},{id:623,n:"Golurk",a:222,d:154,s:205},
-{id:625,n:"Bisharp",a:230,d:179,s:172},{id:628,n:"Braviary",a:232,d:152,s:195},
-{id:630,n:"Mandibuzz",a:148,d:179,s:216},{id:632,n:"Durant",a:218,d:206,s:163},
-{id:635,n:"Hydreigon",a:256,d:188,s:211},{id:637,n:"Volcarona",a:264,d:148,s:207},
-{id:638,n:"Cobalion",a:192,d:229,s:209},{id:639,n:"Terrakion",a:260,d:192,s:209},
-{id:640,n:"Virizion",a:192,d:229,s:209},{id:641,n:"Tornadus",a:266,d:164,s:188},
-{id:642,n:"Thundurus",a:266,d:164,s:188},{id:643,n:"Reshiram",a:275,d:211,s:205},
-{id:644,n:"Zekrom",a:275,d:211,s:205},{id:645,n:"Landorus",a:261,d:182,s:205},
-{id:646,n:"Kyurem",a:246,d:170,s:245},{id:649,n:"Genesect",a:252,d:199,s:186},
-{id:652,n:"Chesnaught",a:201,d:204,s:216},{id:655,n:"Delphox",a:230,d:189,s:181},
-{id:658,n:"Greninja",a:223,d:152,s:176},{id:660,n:"Diggersby",a:112,d:154,s:198},
-{id:663,n:"Talonflame",a:176,d:155,s:186},{id:671,n:"Florges",a:212,d:244,s:186},
-{id:675,n:"Pangoro",a:226,d:143,s:207},{id:681,n:"Aegislash",a:97,d:291,s:163},
-{id:683,n:"Aromatisse",a:173,d:179,s:207},{id:685,n:"Slurpuff",a:168,d:163,s:207},
-{id:689,n:"Barbaracle",a:171,d:208,s:181},{id:691,n:"Dragalge",a:177,d:207,s:163},
-{id:693,n:"Clawitzer",a:221,d:156,s:163},{id:695,n:"Heliolisk",a:193,d:168,s:163},
-{id:697,n:"Tyrantrum",a:227,d:191,s:193},{id:699,n:"Aurorus",a:186,d:163,s:237},
-{id:700,n:"Sylveon",a:203,d:205,s:216},{id:706,n:"Goodra",a:220,d:242,s:207},
-{id:709,n:"Trevenant",a:201,d:154,s:198},{id:711,n:"Gourgeist",a:152,d:186,s:163},
-{id:715,n:"Noivern",a:205,d:162,s:205},{id:716,n:"Xerneas",a:250,d:185,s:246},
-{id:717,n:"Yveltal",a:250,d:185,s:246},{id:718,n:"Zygarde",a:203,d:197,s:216},
-{id:719,n:"Diancie",a:190,d:285,s:137},{id:720,n:"Hoopa",a:261,d:187,s:173},
-{id:721,n:"Volcanion",a:252,d:235,s:190},{id:724,n:"Decidueye",a:210,d:179,s:186},
-{id:727,n:"Incineroar",a:222,d:174,s:216},{id:730,n:"Primarina",a:232,d:218,s:190},
-{id:738,n:"Vikavolt",a:254,d:152,s:163},{id:745,n:"Lycanroc",a:231,d:160,s:181},
-{id:748,n:"Toxapex",a:114,d:295,s:153},{id:752,n:"Araquanid",a:148,d:218,s:172},
-{id:758,n:"Salazzle",a:228,d:120,s:163},{id:763,n:"Tsareena",a:214,d:166,s:172},
-{id:768,n:"Golisopod",a:220,d:213,s:207},{id:773,n:"Silvally",a:211,d:211,s:214},
-{id:778,n:"Mimikyu",a:177,d:199,s:175},{id:781,n:"Dhelmise",a:234,d:210,s:181},
-{id:784,n:"Kommo-o",a:222,d:196,s:181},{id:785,n:"Tapu Koko",a:250,d:181,s:172},
-{id:786,n:"Tapu Lele",a:250,d:190,s:172},{id:787,n:"Tapu Bulu",a:250,d:198,s:172},
-{id:788,n:"Tapu Fini",a:248,d:187,s:172},{id:791,n:"Solgaleo",a:280,d:215,s:206},
-{id:792,n:"Lunala",a:280,d:215,s:206},{id:793,n:"Nihilego",a:249,d:210,s:195},
-{id:795,n:"Pheromosa",a:312,d:74,s:181},{id:796,n:"Xurkitree",a:330,d:122,s:195},
-{id:798,n:"Kartana",a:354,d:211,s:119},{id:799,n:"Guzzlord",a:188,d:99,s:360},
-{id:800,n:"Necrozma",a:277,d:171,s:190},{id:802,n:"Marshadow",a:274,d:175,s:181},
-{id:804,n:"Naganadel",a:263,d:164,s:193},{id:807,n:"Zeraora",a:280,d:187,s:188},
-{id:809,n:"Melmetal",a:226,d:190,s:264},{id:812,n:"Rillaboom",a:228,d:174,s:216},
-{id:815,n:"Cinderace",a:243,d:158,s:198},{id:818,n:"Inteleon",a:244,d:152,s:186},
-{id:823,n:"Corviknight",a:192,d:218,s:198},{id:826,n:"Orbeetle",a:192,d:254,s:163},
-{id:834,n:"Drednaw",a:185,d:184,s:195},{id:836,n:"Boltund",a:188,d:142,s:181},
-{id:839,n:"Coalossal",a:179,d:206,s:233},{id:844,n:"Sandaconda",a:194,d:177,s:205},
-{id:847,n:"Barraskewda",a:269,d:106,s:168},{id:849,n:"Toxtricity",a:233,d:153,s:188},
-{id:851,n:"Centiskorch",a:251,d:155,s:198},{id:858,n:"Hatterene",a:203,d:221,s:141},
-{id:861,n:"Grimmsnarl",a:194,d:163,s:215},{id:862,n:"Obstagoon",a:190,d:190,s:225},
-{id:865,n:"Sirfetch'd",a:248,d:182,s:163},{id:879,n:"Copperajah",a:218,d:173,s:260},
-{id:884,n:"Duraludon",a:225,d:183,s:163},{id:887,n:"Dragapult",a:275,d:175,s:180},
-{id:888,n:"Zacian",a:254,d:236,s:192},{id:889,n:"Zamazenta",a:254,d:236,s:192},
-{id:890,n:"Eternatus",a:310,d:182,s:293},{id:892,n:"Urshifu",a:269,d:168,s:205},
-{id:894,n:"Regieleki",a:321,d:189,s:162},{id:895,n:"Regidrago",a:250,d:129,s:270},
-{id:898,n:"Calyrex",a:250,d:225,s:200}
-];
+  const el = {
+    loadingCard:document.querySelector("#loadingCard"), loadingTitle:document.querySelector("#loadingTitle"), loadingText:document.querySelector("#loadingText"), debug:document.querySelector("#debug"),
+    attackerSearch:document.querySelector("#attackerSearch"), attackerDropdown:document.querySelector("#attackerDropdown"), attackerCard:document.querySelector("#attackerCard"),
+    defenderSearch:document.querySelector("#defenderSearch"), defenderDropdown:document.querySelector("#defenderDropdown"), defenderCard:document.querySelector("#defenderCard"),
+    mode:document.querySelector("#mode"), currentLevel:document.querySelector("#currentLevel"), targetLevel:document.querySelector("#targetLevel"), defenderLevel:document.querySelector("#defenderLevel"),
+    friendBoost:document.querySelector("#friendBoost"), weather:document.querySelector("#weather"),
+    atkIvAtk:document.querySelector("#atkIvAtk"), atkIvDef:document.querySelector("#atkIvDef"), atkIvSta:document.querySelector("#atkIvSta"), defIvDef:document.querySelector("#defIvDef"), defIvSta:document.querySelector("#defIvSta"),
+    fastMove:document.querySelector("#fastMove"), chargedMove:document.querySelector("#chargedMove"), summaryPanel:document.querySelector("#summaryPanel"), damagePanel:document.querySelector("#damagePanel"), levelBody:document.querySelector("#levelBody")
+  };
 
-// ═══════════════════════════════════════════════════════
-// MOVES  (Game Master PvE 기준)
-// ═══════════════════════════════════════════════════════
-const FM = [
-  {n:"Bite",p:6,d:500,e:4,t:"Dark"},{n:"Bullet Punch",p:9,d:900,e:10,t:"Steel"},
-  {n:"Charge Beam",p:8,d:1100,e:15,t:"Electric"},{n:"Charm",p:20,d:1500,e:11,t:"Fairy"},
-  {n:"Confusion",p:20,d:1600,e:15,t:"Psychic"},{n:"Counter",p:12,d:900,e:13,t:"Fighting"},
-  {n:"Dragon Breath",p:6,d:500,e:4,t:"Dragon"},{n:"Dragon Tail",p:15,d:1100,e:9,t:"Dragon"},
-  {n:"Ember",p:10,d:1000,e:10,t:"Fire"},{n:"Extrasensory",p:12,d:1100,e:12,t:"Psychic"},
-  {n:"Fire Fang",p:11,d:900,e:8,t:"Fire"},{n:"Fire Spin",p:14,d:1100,e:10,t:"Fire"},
-  {n:"Frost Breath",p:9,d:900,e:8,t:"Ice"},{n:"Fury Cutter",p:3,d:400,e:6,t:"Bug"},
-  {n:"Hex",p:10,d:1400,e:15,t:"Ghost"},{n:"Ice Fang",p:12,d:900,e:10,t:"Ice"},
-  {n:"Ice Shard",p:12,d:1200,e:15,t:"Ice"},{n:"Karate Chop",p:8,d:800,e:10,t:"Fighting"},
-  {n:"Lick",p:5,d:500,e:6,t:"Ghost"},{n:"Lock-On",p:1,d:1000,e:5,t:"Normal"},
-  {n:"Low Kick",p:6,d:600,e:6,t:"Fighting"},{n:"Magical Leaf",p:13,d:1300,e:15,t:"Grass"},
-  {n:"Metal Claw",p:8,d:700,e:7,t:"Steel"},{n:"Mud Shot",p:5,d:700,e:9,t:"Ground"},
-  {n:"Mud Slap",p:18,d:1400,e:12,t:"Ground"},{n:"Poison Jab",p:12,d:800,e:7,t:"Poison"},
-  {n:"Powder Snow",p:6,d:1000,e:15,t:"Ice"},{n:"Psycho Cut",p:7,d:700,e:9,t:"Psychic"},
-  {n:"Quick Attack",p:8,d:800,e:10,t:"Normal"},{n:"Razor Leaf",p:13,d:1000,e:7,t:"Grass"},
-  {n:"Rock Throw",p:12,d:900,e:7,t:"Rock"},{n:"Scratch",p:6,d:500,e:4,t:"Normal"},
-  {n:"Shadow Claw",p:9,d:700,e:9,t:"Ghost"},{n:"Smack Down",p:16,d:1100,e:8,t:"Rock"},
-  {n:"Snarl",p:5,d:900,e:12,t:"Dark"},{n:"Spark",p:6,d:700,e:9,t:"Electric"},
-  {n:"Steel Wing",p:11,d:800,e:6,t:"Steel"},{n:"Sucker Punch",p:7,d:700,e:7,t:"Dark"},
-  {n:"Tackle",p:5,d:500,e:5,t:"Normal"},{n:"Thunder Fang",p:12,d:900,e:10,t:"Electric"},
-  {n:"Thunder Shock",p:5,d:600,e:8,t:"Electric"},{n:"Vine Whip",p:7,d:600,e:6,t:"Grass"},
-  {n:"Volt Switch",p:20,d:2300,e:25,t:"Electric"},{n:"Water Gun",p:5,d:500,e:5,t:"Water"},
-  {n:"Wing Attack",p:8,d:800,e:10,t:"Flying"},{n:"Zen Headbutt",p:12,d:1100,e:10,t:"Psychic"}
-];
-const CM = [
-  {n:"Aqua Tail",p:50,d:1900,e:-33,t:"Water"},{n:"Blizzard",p:130,d:3100,e:-100,t:"Ice"},
-  {n:"Body Slam",p:50,d:1900,e:-33,t:"Normal"},{n:"Brave Bird",p:90,d:2000,e:-55,t:"Flying"},
-  {n:"Bug Buzz",p:90,d:3700,e:-50,t:"Bug"},{n:"Bulldoze",p:80,d:3500,e:-50,t:"Ground"},
-  {n:"Close Combat",p:100,d:2300,e:-100,t:"Fighting"},{n:"Cross Chop",p:50,d:1500,e:-33,t:"Fighting"},
-  {n:"Crunch",p:70,d:3200,e:-33,t:"Dark"},{n:"Dark Pulse",p:80,d:3000,e:-50,t:"Dark"},
-  {n:"Dazzling Gleam",p:100,d:3500,e:-50,t:"Fairy"},{n:"Discharge",p:65,d:2500,e:-33,t:"Electric"},
-  {n:"Disarming Voice",p:70,d:3900,e:-33,t:"Fairy"},{n:"Dragon Claw",p:50,d:1700,e:-33,t:"Dragon"},
-  {n:"Dragon Pulse",p:90,d:3600,e:-50,t:"Dragon"},{n:"Draining Kiss",p:60,d:2600,e:-33,t:"Fairy"},
-  {n:"Dynamic Punch",p:90,d:2700,e:-50,t:"Fighting"},{n:"Earth Power",p:100,d:3500,e:-50,t:"Ground"},
-  {n:"Earthquake",p:140,d:3600,e:-100,t:"Ground"},{n:"Energy Ball",p:90,d:3900,e:-50,t:"Grass"},
-  {n:"Fire Blast",p:140,d:4200,e:-100,t:"Fire"},{n:"Fire Punch",p:55,d:2200,e:-33,t:"Fire"},
-  {n:"Flamethrower",p:90,d:2200,e:-50,t:"Fire"},{n:"Flash Cannon",p:100,d:2700,e:-50,t:"Steel"},
-  {n:"Focus Blast",p:140,d:3500,e:-100,t:"Fighting"},{n:"Foul Play",p:70,d:2000,e:-50,t:"Dark"},
-  {n:"Future Sight",p:120,d:2700,e:-65,t:"Psychic"},{n:"Giga Drain",p:50,d:3900,e:-33,t:"Grass"},
-  {n:"Grass Knot",p:90,d:2600,e:-50,t:"Grass"},{n:"Heat Wave",p:95,d:3000,e:-50,t:"Fire"},
-  {n:"Hurricane",p:110,d:2700,e:-65,t:"Flying"},{n:"Hydro Pump",p:130,d:3300,e:-100,t:"Water"},
-  {n:"Hyper Beam",p:150,d:3800,e:-100,t:"Normal"},{n:"Ice Beam",p:90,d:3300,e:-50,t:"Ice"},
-  {n:"Ice Punch",p:55,d:1700,e:-33,t:"Ice"},{n:"Icy Wind",p:60,d:3700,e:-33,t:"Ice"},
-  {n:"Iron Head",p:60,d:1900,e:-33,t:"Steel"},{n:"Leaf Blade",p:70,d:2400,e:-33,t:"Grass"},
-  {n:"Meteor Mash",p:100,d:2600,e:-50,t:"Steel"},{n:"Moon Blast",p:130,d:3500,e:-100,t:"Fairy"},
-  {n:"Night Slash",p:50,d:2000,e:-33,t:"Dark"},{n:"Outrage",p:110,d:3900,e:-50,t:"Dragon"},
-  {n:"Overheat",p:160,d:4000,e:-100,t:"Fire"},{n:"Play Rough",p:90,d:2900,e:-50,t:"Fairy"},
-  {n:"Psychic",p:90,d:2800,e:-50,t:"Psychic"},{n:"Return",p:35,d:1300,e:-33,t:"Normal"},
-  {n:"Rock Slide",p:80,d:2700,e:-50,t:"Rock"},{n:"Sacred Sword",p:55,d:1700,e:-33,t:"Fighting"},
-  {n:"Shadow Ball",p:100,d:3000,e:-50,t:"Ghost"},{n:"Signal Beam",p:75,d:2900,e:-50,t:"Bug"},
-  {n:"Sludge Bomb",p:80,d:2300,e:-50,t:"Poison"},{n:"Solar Beam",p:180,d:4900,e:-100,t:"Grass"},
-  {n:"Stone Edge",p:100,d:2300,e:-100,t:"Rock"},{n:"Synchronoise",p:80,d:2800,e:-50,t:"Psychic"},
-  {n:"Thunder",p:100,d:2400,e:-100,t:"Electric"},{n:"Thunder Punch",p:55,d:1800,e:-33,t:"Electric"},
-  {n:"Thunderbolt",p:80,d:2500,e:-50,t:"Electric"},{n:"Triple Axel",p:60,d:2000,e:-33,t:"Ice"},
-  {n:"Water Pulse",p:70,d:3200,e:-50,t:"Water"},{n:"Wild Charge",p:90,d:2600,e:-50,t:"Electric"},
-  {n:"X-Scissor",p:45,d:1600,e:-33,t:"Bug"},{n:"Zap Cannon",p:140,d:3700,e:-100,t:"Electric"}
-];
+  const state = {search:[], stats:new Map(), types:new Map(), pools:new Map(), moveMap:{pveFast:new Map(),pveCharged:new Map(),pvpFast:new Map(),pvpCharged:new Map()}, effect:{}, weather:{}, attacker:null, defender:null};
 
-// ═══════════════════════════════════════════════════════
-// MOVESETS
-// ═══════════════════════════════════════════════════════
-const MS = {
-  1:{f:["Vine Whip","Tackle"],c:["Sludge Bomb","Energy Ball"]},
-  4:{f:["Ember","Scratch"],c:["Flamethrower","Fire Blast","Fire Punch"]},
-  6:{f:["Ember","Fire Spin"],c:["Flamethrower","Fire Blast","Dragon Claw","Overheat"]},
-  7:{f:["Water Gun"],c:["Aqua Tail","Hydro Pump","Flash Cannon"]},
-  9:{f:["Water Gun","Bite"],c:["Hydro Pump","Ice Beam","Flash Cannon"]},
-  25:{f:["Spark","Thunder Shock"],c:["Thunder","Thunderbolt","Wild Charge","Discharge"]},
-  26:{f:["Thunder Shock","Volt Switch"],c:["Thunder","Thunderbolt","Wild Charge"]},
-  65:{f:["Confusion","Psycho Cut"],c:["Psychic","Future Sight","Shadow Ball","Focus Blast"]},
-  68:{f:["Counter","Bullet Punch"],c:["Cross Chop","Dynamic Punch","Close Combat","Rock Slide","Earthquake","Stone Edge"]},
-  94:{f:["Shadow Claw","Lick","Hex"],c:["Shadow Ball","Focus Blast","Sludge Bomb","Dark Pulse","Psychic"]},
-  130:{f:["Dragon Tail","Bite"],c:["Outrage","Aqua Tail","Hydro Pump","Crunch"]},
-  143:{f:["Lick","Zen Headbutt"],c:["Hyper Beam","Body Slam","Earthquake"]},
-  150:{f:["Confusion","Psycho Cut"],c:["Psychic","Shadow Ball","Focus Blast","Ice Beam","Thunderbolt","Flamethrower","Fire Blast"]},
-  151:{f:["Pound","Shadow Claw"],c:["Psychic","Blizzard","Hyper Beam","Solar Beam","Dragon Claw","Hurricane","Overheat","Grass Knot","Thunder","Ice Beam","Wild Charge","Rock Slide"]},
-  249:{f:["Dragon Tail","Extrasensory"],c:["Hydro Pump","Future Sight"]},
-  250:{f:["Extrasensory","Steel Wing","Fire Spin"],c:["Solar Beam","Brave Bird","Earthquake","Fire Blast"]},
-  282:{f:["Confusion","Charm","Magical Leaf","Charge Beam"],c:["Psychic","Dazzling Gleam","Shadow Ball","Synchronoise","Triple Axel","Return"]},
-  373:{f:["Dragon Tail","Fire Fang","Bite"],c:["Outrage","Hydro Pump","Fire Blast","Dragon Pulse"]},
-  376:{f:["Bullet Punch","Zen Headbutt"],c:["Psychic","Meteor Mash","Earthquake","Flash Cannon","Hyper Beam"]},
-  382:{f:["Waterfall"],c:["Hydro Pump","Blizzard","Thunder"]},
-  383:{f:["Dragon Tail","Mud Shot"],c:["Solar Beam","Earthquake","Fire Punch","Fire Blast"]},
-  384:{f:["Dragon Tail"],c:["Outrage","Hyper Beam","Blizzard","Hurricane"]},
-  445:{f:["Dragon Tail","Mud Shot"],c:["Outrage","Earthquake","Earth Power","Fire Blast"]},
-  448:{f:["Counter","Bullet Punch"],c:["Close Combat","Flash Cannon","Shadow Ball"]},
-  460:{f:["Powder Snow","Razor Leaf"],c:["Blizzard","Outrage","Energy Ball","Ice Beam"]},
-  461:{f:["Snarl","Ice Shard"],c:["Avalanche","Night Slash","Focus Blast","Triple Axel"]},
-  483:{f:["Dragon Breath","Dragon Tail","Metal Claw"],c:["Iron Head","Thunder"]},
-  484:{f:["Dragon Tail","Dragon Breath"],c:["Aqua Tail","Fire Blast"]},
-  485:{f:["Fire Spin"],c:["Stone Edge","Flamethrower","Iron Head","Earth Power","Fire Blast"]},
-  487:{f:["Dragon Tail","Shadow Claw"],c:["Dragon Pulse","Shadow Ball"]},
-  491:{f:["Snarl"],c:["Shadow Ball","Dark Pulse","Focus Blast","Ice Beam"]},
-  530:{f:["Mud Shot","Metal Claw","Mud Slap"],c:["Earthquake","Rock Slide","Iron Head"]},
-  700:{f:["Charm","Quick Attack"],c:["Dazzling Gleam","Moon Blast","Return","Psychic"]},
-};
+  const esc = (v) => String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;");
+  const norm = (v) => String(v ?? "").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g,"").replace(/[.'’`-]/g,"");
+  const fmt = (v,d=2) => Number(v).toLocaleString("ko-KR",{minimumFractionDigits:d,maximumFractionDigits:d});
+  const fmtNum = (v) => Number.isInteger(v) ? Number(v).toLocaleString("ko-KR") : fmt(v,2);
+  const pct = (ratio) => `${(ratio-1)>=0?"+":""}${fmt((ratio-1)*100,2)}%`;
+  const cls = (ratio) => ratio > 1.00001 ? "good" : ratio < 0.99999 ? "bad" : "warn";
+  const iv = (v) => Math.max(0, Math.min(15, Math.round(Number(v) || 0)));
+  const pick = (list) => (list || []).find(x => x.form === "Normal") || (list || []).find(x => !x.form) || (list || [])[0] || null;
+  const titleCase = (s) => String(s || "").replace(/(^|[\s-])([a-z])/g, (_, a, b) => a + b.toUpperCase());
 
-// ═══════════════════════════════════════════════════════
-// TYPE MAPS
-// ═══════════════════════════════════════════════════════
-const TK = {Normal:"노말",Fire:"불꽃",Water:"물",Electric:"전기",Grass:"풀",Ice:"얼음",Fighting:"격투",Poison:"독",Ground:"땅",Flying:"비행",Psychic:"에스퍼",Bug:"벌레",Rock:"바위",Ghost:"고스트",Dragon:"드래곤",Dark:"악",Steel:"강철",Fairy:"페어리"};
-const TC = {Normal:"normal",Fire:"fire",Water:"water",Electric:"electric",Grass:"grass",Ice:"ice",Fighting:"fighting",Poison:"poison",Ground:"ground",Flying:"flying",Psychic:"psychic",Bug:"bug",Rock:"rock",Ghost:"ghost",Dragon:"dragon",Dark:"dark",Steel:"steel",Fairy:"fairy"};
+  function setLoading(title, text, debugText="") { el.loadingTitle.textContent = title; el.loadingText.textContent = text; el.debug.innerHTML = debugText; }
+  function fillLevelOptions(){ const html = LEVELS.map(l => `<option value="${l}">${l}</option>`).join(""); el.currentLevel.innerHTML = html; el.targetLevel.innerHTML = html; el.defenderLevel.innerHTML = html; el.currentLevel.value = "35"; el.targetLevel.value = "50"; el.defenderLevel.value = "40"; }
 
-// ═══════════════════════════════════════════════════════
-// APP STATE
-// ═══════════════════════════════════════════════════════
-const S = { iv:15, def:100, eff:1.0, curLv:40, tgtLv:50, poke:null, krName:null, types:[] };
-
-// ═══════════════════════════════════════════════════════
-// CORE CALC
-// ═══════════════════════════════════════════════════════
-function calcDmg(baseAtk, iv, lv, pow, stab, eff, def) {
-  return Math.floor(0.5 * pow * ((baseAtk + iv) * CPM[lv] / def) * stab * eff) + 1;
-}
-
-// ═══════════════════════════════════════════════════════
-// SPRITE URLs
-// ═══════════════════════════════════════════════════════
-const artworkURL = id => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
-const spriteURL  = id => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
-
-// ═══════════════════════════════════════════════════════
-// RENDER: POKEMON CARD
-// ═══════════════════════════════════════════════════════
-function renderCard() {
-  const p = S.poke;
-  if (!p) return;
-  const kr   = S.krName || p.n;
-  const types = S.types || [];
-  const chips = types.map(t => {
-    const cl = TC[t] || '';
-    return `<span class="type-chip t-${cl}">${TK[t] || t}</span>`;
-  }).join('');
-  const mA = 354, mD = 310, mS = 510;
-  document.getElementById('pokeCard').innerHTML = `
-    <div class="poke-hero">
-      <div class="poke-dexno">#${String(p.id).padStart(3,'0')}</div>
-      <img class="poke-artwork"
-        src="${artworkURL(p.id)}"
-        alt="${kr}"
-        onerror="this.src='${spriteURL(p.id)}'"
-      >
-      <div class="poke-en">${p.n}</div>
-      <div class="poke-kr">${kr}</div>
-      <div class="poke-types">${chips || '<span style="color:var(--t3);font-size:11px">타입 로딩 중…</span>'}</div>
-    </div>
-    <div class="poke-stats">
-      <div class="stat-row">
-        <div class="stat-lbl">ATK</div>
-        <div class="stat-bar-bg"><div class="stat-bar bar-a" style="width:${p.a/mA*100}%"></div></div>
-        <div class="stat-val">${p.a}</div>
-      </div>
-      <div class="stat-row">
-        <div class="stat-lbl">DEF</div>
-        <div class="stat-bar-bg"><div class="stat-bar bar-d" style="width:${p.d/mD*100}%"></div></div>
-        <div class="stat-val">${p.d}</div>
-      </div>
-      <div class="stat-row">
-        <div class="stat-lbl">STA</div>
-        <div class="stat-bar-bg"><div class="stat-bar bar-s" style="width:${p.s/mS*100}%"></div></div>
-        <div class="stat-val">${p.s}</div>
-      </div>
-    </div>`;
-}
-
-// ═══════════════════════════════════════════════════════
-// RENDER: MOVE TABLE
-// ═══════════════════════════════════════════════════════
-function renderMoves() {
-  const p = S.poke;
-  if (!p) return;
-  const ms = MS[p.id];
-  if (!ms) {
-    document.getElementById('movePanel').innerHTML = '<div class="empty">이 포켓몬의 기술 데이터가 없습니다.</div>';
-    return;
+  function parseCsv(text){
+    const rows = []; let row = [], cell = "", q = false;
+    for(let i=0;i<text.length;i++){
+      const ch = text[i], nx = text[i+1];
+      if(ch === '"'){ if(q && nx === '"'){ cell += '"'; i++; } else q = !q; continue; }
+      if(ch === "," && !q){ row.push(cell); cell=""; continue; }
+      if((ch === "\n" || ch === "\r") && !q){ if(ch === "\r" && nx === "\n") i++; row.push(cell); cell=""; if(row.length > 1 || row[0] !== "") rows.push(row); row=[]; continue; }
+      cell += ch;
+    }
+    if(cell.length || row.length){ row.push(cell); rows.push(row); }
+    const [head,...body] = rows;
+    const keys = head.map((k,i)=> i===0 ? k.replace(/^\uFEFF/,"") : k);
+    return body.map(r => Object.fromEntries(keys.map((k,i)=>[k, r[i] ?? ""])));
   }
-  const fl = FM.filter(m => ms.f.includes(m.n)).map(m => ({...m, k:'f'}));
-  const cl = CM.filter(m => ms.c.includes(m.n)).map(m => ({...m, k:'c'}));
-  const all = [...fl, ...cl];
 
-  const rows = all.map(m => {
-    const stab = (S.types || []).includes(m.t) ? 1.2 : 1.0;
-    const d1 = calcDmg(p.a, S.iv, S.curLv, m.p, stab, S.eff, S.def);
-    const d2 = calcDmg(p.a, S.iv, S.tgtLv, m.p, stab, S.eff, S.def);
-    const dps1 = (d1 / (m.d/1000)).toFixed(1);
-    const dps2 = (d2 / (m.d/1000)).toFixed(1);
-    const diff = d2 - d1;
-    const tcl  = TC[m.t] || '';
-    const stabMark = stab > 1 ? '<span class="stab-star">★</span>' : '';
-    const diffHtml = diff > 0
-      ? `<span class="d-diff-up">+${diff}</span>`
-      : `<span class="d-diff-eq">—</span>`;
-    return `<tr>
-      <td>
-        <div class="mv-name">${m.n}${stabMark} <span class="mv-badge mv-${m.k==='f'?'fast':'charge'}">${m.k==='f'?'노말':'스페셜'}</span></div>
-        <div class="mv-meta">
-          <span class="mv-ttype t-${tcl} tc-${tcl}" style="border-color:var(--tc,rgba(255,255,255,.15));color:var(--tc)">${TK[m.t]||m.t}</span>
-          위력 <b>${m.p}</b> · ${(m.d/1000).toFixed(1)}s · E${m.e>0?'+':''}${m.e}
+  function indexById(arr,key="id"){ const m = new Map(); arr.forEach(x => { const id = Number(x[key]); if(Number.isFinite(id)) m.set(id, x); }); return m; }
+  function groupById(arr,key="pokemon_id"){ const m = new Map(); arr.forEach(x => { const id = Number(x[key]); if(!Number.isFinite(id)) return; if(!m.has(id)) m.set(id, []); m.get(id).push(x); }); return m; }
+
+  function getPokemon(id){
+    if(!id) return null;
+    const meta = state.search.find(x => x.id === Number(id));
+    if(!meta) return null;
+    const stat = state.stats.get(Number(id));
+    const typeEntry = pick(state.types.get(Number(id)));
+    const moveEntry = pick(state.pools.get(Number(id)));
+    return {
+      ...meta,
+      form: moveEntry?.form || typeEntry?.form || "Normal",
+      image: API.artwork(id),
+      types: Array.isArray(typeEntry?.type) ? typeEntry.type : [],
+      stats:{ baseAttack:Number(stat?.base_attack ?? 0), baseDefense:Number(stat?.base_defense ?? 0), baseStamina:Number(stat?.base_stamina ?? 0) },
+      fastMoves:[...new Set([...(moveEntry?.fast_moves || []), ...(moveEntry?.elite_fast_moves || [])])].sort((a,b)=>a.localeCompare(b)),
+      chargedMoves:[...new Set([...(moveEntry?.charged_moves || []), ...(moveEntry?.elite_charged_moves || [])])].sort((a,b)=>a.localeCompare(b))
+    };
+  }
+
+  function getAtkIvs(){ return {attack:iv(el.atkIvAtk.value), defense:iv(el.atkIvDef.value), stamina:iv(el.atkIvSta.value)}; }
+  function getDefIvs(){ return {attack:0, defense:iv(el.defIvDef.value), stamina:iv(el.defIvSta.value)}; }
+
+  function calcStats(pokemon, level, ivs){
+    const m = CPM[level];
+    const atk = (pokemon.stats.baseAttack + ivs.attack) * m;
+    const def = (pokemon.stats.baseDefense + ivs.defense) * m;
+    const hp = Math.floor((pokemon.stats.baseStamina + ivs.stamina) * m);
+    const cp = Math.max(10, Math.floor(((pokemon.stats.baseAttack + ivs.attack) * Math.sqrt(pokemon.stats.baseDefense + ivs.defense) * Math.sqrt(pokemon.stats.baseStamina + ivs.stamina) * m * m) / 10));
+    return {level,cpm:m,attack:atk,defense:def,hp,cp};
+  }
+
+  function getMove(name, mode, kind){
+    if(!name) return null;
+    if(mode === "pvp" && kind === "fast") return state.moveMap.pvpFast.get(name) || null;
+    if(mode === "pvp" && kind === "charged") return state.moveMap.pvpCharged.get(name) || null;
+    if(mode === "pve" && kind === "fast") return state.moveMap.pveFast.get(name) || null;
+    return state.moveMap.pveCharged.get(name) || null;
+  }
+
+  function typeMult(moveType, defTypes){ const row = state.effect[moveType] || {}; return defTypes.reduce((m,t)=>m * Number(row[t] ?? 1), 1); }
+  function weatherMult(moveType){ const w = el.weather.value; if(!w) return 1; return (state.weather[w] || []).includes(moveType) ? 1.2 : 1; }
+
+  function calcDamage({mode, move, attacker, attackerLevel, defender, defenderLevel, atkIvs, defIvs}){
+    if(!move || !attacker || !defender) return null;
+    const a = calcStats(attacker, attackerLevel, atkIvs);
+    const d = calcStats(defender, defenderLevel, {attack:0, defense:defIvs.defense, stamina:defIvs.stamina});
+    const stab = attacker.types.includes(move.type) ? 1.2 : 1;
+    const eff = typeMult(move.type, defender.types);
+    const weather = mode === "pve" ? weatherMult(move.type) : 1;
+    const friend = mode === "pve" ? Number(el.friendBoost.value) : 1;
+    const pvp = mode === "pvp" ? 1.3 : 1;
+    const damage = Math.floor(0.5 * Number(move.power || 0) * pvp * (a.attack / d.defense) * stab * eff * weather * friend) + 1;
+    return {damage, stab, eff, weather, friend, a, d};
+  }
+
+  function resultList(q){
+    const n = norm(q);
+    if(n.length < 1) return [];
+    const starts = [], contains = [];
+    state.search.forEach(p => {
+      const ko = norm(p.koName), en = norm(p.enName), pogo = norm(p.pogoName);
+      if(!(ko.includes(n) || en.includes(n) || pogo.includes(n))) return;
+      const score = (ko.startsWith(n) ? 0 : 10) + (en.startsWith(n) ? 0 : 1) + (pogo.startsWith(n) ? 0 : 1);
+      const row = {...p, _score:score};
+      (score < 10 ? starts : contains).push(row);
+    });
+    return [...starts.sort((a,b)=>a._score-b._score || a.id-b.id), ...contains.sort((a,b)=>a._score-b._score || a.id-b.id)].slice(0, 12);
+  }
+
+  function drawDropdown(box, items, cb, activeIndex=0){
+    if(!items.length){ box.classList.remove("open"); box.innerHTML = ""; return; }
+    box.innerHTML = items.map((p,idx) => `
+      <div class="item ${idx===activeIndex?"active":""}" data-id="${p.id}">
+        <div style="display:flex;justify-content:space-between;gap:8px"><strong>${esc(p.koName)}</strong><span class="muted">#${p.id}</span></div>
+        <div class="muted">${esc(titleCase(p.enName))}</div>
+      </div>
+    `).join("");
+    box.querySelectorAll(".item").forEach(node => node.addEventListener("mousedown", (e) => { e.preventDefault(); const id = Number(node.dataset.id); const p = state.search.find(x => x.id === id); if(p) cb(p); }));
+    box.classList.add("open");
+  }
+  function closeDropdown(box){ box.classList.remove("open"); box.innerHTML = ""; }
+
+  function cardHTML(pokemon, emptyText){
+    if(!pokemon) return `<div class="pk-card empty"><p>${emptyText}</p></div>`;
+    return `
+      <div class="pk-card">
+        <div class="pk-inner">
+          <div class="art"><img src="${esc(pokemon.image)}" alt="${esc(pokemon.koName)} 공식 일러스트" loading="lazy"></div>
+          <div>
+            <div class="row"><h3>${esc(pokemon.koName)}</h3><span class="badge">#${pokemon.id}</span><span class="badge">${esc(titleCase(pokemon.enName))}</span><span class="badge">폼: ${esc(pokemon.form)}</span></div>
+            <div class="row" style="margin-top:10px">${pokemon.types.length ? pokemon.types.map(t => `<span class="chip">${esc(TYPE_KO[t] || t)}</span>`).join("") : `<span class="badge">타입 정보 없음</span>`}</div>
+            <div class="stats3">
+              <div class="box"><span>기본 공격</span><strong>${fmtNum(pokemon.stats.baseAttack)}</strong></div>
+              <div class="box"><span>기본 방어</span><strong>${fmtNum(pokemon.stats.baseDefense)}</strong></div>
+              <div class="box"><span>기본 체력</span><strong>${fmtNum(pokemon.stats.baseStamina)}</strong></div>
+            </div>
+          </div>
         </div>
-      </td>
-      <td><div class="d-cur">${d1}</div><div class="d-sub">${dps1}/s</div></td>
-      <td><div class="d-tgt">${d2}</div><div class="d-sub" style="color:var(--gr)">${dps2}/s</div></td>
-      <td>${diffHtml}</td>
-    </tr>`;
-  }).join('');
-
-  document.getElementById('movePanel').innerHTML = `
-    <table class="move-tbl">
-      <thead><tr>
-        <th>기술</th>
-        <th>Lv.${S.curLv}</th>
-        <th>Lv.${S.tgtLv}</th>
-        <th>차이</th>
-      </tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-    <div style="margin-top:12px;font-size:10px;color:var(--t3);font-family:var(--mono)">
-      ★ = STAB ×1.2 적용 &nbsp;|&nbsp; 방어자 DEF ${S.def} &nbsp;|&nbsp; 상성 ×${S.eff}
-    </div>`;
-}
-
-// ═══════════════════════════════════════════════════════
-// RENDER: CPM TABLE
-// ═══════════════════════════════════════════════════════
-function renderCPM() {
-  const p = S.poke;
-  if (!p) return;
-  const rows = LVS.map(lv => {
-    const cpm = CPM[lv];
-    const atk = ((p.a + S.iv) * cpm).toFixed(2);
-    const isC = lv === S.curLv, isT = lv === S.tgtLv;
-    const cls = isC && isT ? 'row-both' : isC ? 'row-cur' : isT ? 'row-tgt' : '';
-    const tag = isC && isT ? '◆' : isC ? '◄' : isT ? '▶' : '';
-    const lvHTML = Number.isInteger(lv) ? `<b class="lv-int">${lv}</b>` : `${lv}`;
-    return `<tr class="${cls}">
-      <td>${lvHTML}</td>
-      <td>${cpm.toFixed(5)}</td>
-      <td>${atk}</td>
-      <td style="font-size:10px">${tag}</td>
-    </tr>`;
-  }).join('');
-
-  document.getElementById('cpmPanel').innerHTML = `
-    <table class="cpm-tbl">
-      <thead><tr>
-        <th>레벨</th><th>CPM</th><th>실질 ATK (IV${S.iv})</th><th></th>
-      </tr></thead>
-      <tbody>${rows}</tbody>
-    </table>`;
-
-  // 현재 레벨로 스크롤
-  const trs = document.querySelectorAll('#cpmPanel .cpm-tbl tbody tr');
-  const idx = LVS.indexOf(S.curLv);
-  if (trs[idx]) setTimeout(() => trs[idx].scrollIntoView({block:'center', behavior:'smooth'}), 80);
-}
-
-// ═══════════════════════════════════════════════════════
-// RENDER: UPLIFT BANNER
-// ═══════════════════════════════════════════════════════
-function renderUplift() {
-  const c = CPM[S.curLv], t = CPM[S.tgtLv];
-  const pct = (t/c - 1) * 100;
-  const sign = pct >= 0 ? '+' : '';
-  let info = '';
-  if (S.poke) {
-    const a1 = ((S.poke.a + S.iv) * c).toFixed(1);
-    const a2 = ((S.poke.a + S.iv) * t).toFixed(1);
-    info = `실질 공격력 <b>${a1}</b> → <b>${a2}</b>&nbsp;&nbsp;(Lv.${S.curLv} → Lv.${S.tgtLv})`;
-  } else {
-    info = `CPM &nbsp;${c.toFixed(5)} → ${t.toFixed(5)}`;
+      </div>`;
   }
-  document.getElementById('upliftPct').innerHTML = `${sign}${pct.toFixed(2)}<small>%</small>`;
-  document.getElementById('upliftInfo').innerHTML = info;
-}
 
-// ═══════════════════════════════════════════════════════
-// SELECT POKEMON  (data-first, then enrich from PokeAPI)
-// ═══════════════════════════════════════════════════════
-async function selectPokemon(p) {
-  S.poke = p;
-  S.krName = null;
-  S.types = [];
-  renderCard();
-  renderMoves();
-  renderCPM();
-  renderUplift();
+  function renderMoveSelects(){
+    const attacker = getPokemon(state.attacker);
+    if(!attacker){ el.fastMove.innerHTML = `<option value="">공격 포켓몬을 먼저 선택하세요</option>`; el.chargedMove.innerHTML = `<option value="">공격 포켓몬을 먼저 선택하세요</option>`; return; }
+    const mode = el.mode.value;
+    const prevFast = el.fastMove.value, prevCharged = el.chargedMove.value;
+    el.fastMove.innerHTML = `<option value="">노말 기술 선택</option>` + attacker.fastMoves.map(name => { const m = getMove(name, mode, "fast"); const label = m ? `${name} · ${TYPE_KO[m.type] || m.type} · 위력 ${m.power}` : name; return `<option value="${esc(name)}">${esc(label)}</option>`; }).join("");
+    el.chargedMove.innerHTML = `<option value="">스페셜 기술 선택</option>` + attacker.chargedMoves.map(name => { const m = getMove(name, mode, "charged"); const label = m ? `${name} · ${TYPE_KO[m.type] || m.type} · 위력 ${m.power}` : name; return `<option value="${esc(name)}">${esc(label)}</option>`; }).join("");
+    el.fastMove.value = attacker.fastMoves.includes(prevFast) ? prevFast : (attacker.fastMoves[0] || "");
+    el.chargedMove.value = attacker.chargedMoves.includes(prevCharged) ? prevCharged : (attacker.chargedMoves[0] || "");
+  }
 
-  // PokeAPI enrichment (CORS 허용됨 — 이미지/한국어 이름/타입)
-  try {
-    const [pkRes, spRes] = await Promise.all([
-      fetch(`https://pokeapi.co/api/v2/pokemon/${p.id}`),
-      fetch(`https://pokeapi.co/api/v2/pokemon-species/${p.id}`)
+  function renderSummary(){
+    const attacker = getPokemon(state.attacker);
+    if(!attacker){ el.summaryPanel.className = "panel empty"; el.summaryPanel.innerHTML = "<p>공격 포켓몬을 선택하면 계산 결과가 표시됩니다.</p>"; return; }
+    const cur = calcStats(attacker, Number(el.currentLevel.value), getAtkIvs());
+    const tar = calcStats(attacker, Number(el.targetLevel.value), getAtkIvs());
+    const rAtk = tar.attack / cur.attack, rDef = tar.defense / cur.defense, rHp = tar.hp / cur.hp, rCp = tar.cp / cur.cp;
+    el.summaryPanel.className = "panel";
+    el.summaryPanel.innerHTML = `
+      <div class="sub">
+        <div class="box">
+          <h3>${esc(attacker.koName)} · 레벨 ${el.currentLevel.value} → ${el.targetLevel.value}</h3>
+          <div class="sumgrid" style="margin-top:12px">
+            <div class="box"><span>실효 공격력 차이</span><strong class="${cls(rAtk)}">${pct(rAtk)}</strong></div>
+            <div class="box"><span>실효 방어력 차이</span><strong class="${cls(rDef)}">${pct(rDef)}</strong></div>
+            <div class="box"><span>HP 차이</span><strong class="${cls(rHp)}">${pct(rHp)}</strong></div>
+            <div class="box"><span>CP 차이</span><strong class="${cls(rCp)}">${pct(rCp)}</strong></div>
+          </div>
+        </div>
+        <div class="valgrid">
+          <div class="box"><h4>현재 레벨</h4><div style="margin-top:8px"><small>공격력</small><strong>${fmt(cur.attack,3)}</strong></div><div><small>방어력</small><strong>${fmt(cur.defense,3)}</strong></div><div><small>HP</small><strong>${fmtNum(cur.hp)}</strong></div><div><small>CP</small><strong>${fmtNum(cur.cp)}</strong></div></div>
+          <div class="box"><h4>목표 레벨</h4><div style="margin-top:8px"><small>공격력</small><strong>${fmt(tar.attack,3)}</strong></div><div><small>방어력</small><strong>${fmt(tar.defense,3)}</strong></div><div><small>HP</small><strong>${fmtNum(tar.hp)}</strong></div><div><small>CP</small><strong>${fmtNum(tar.cp)}</strong></div></div>
+        </div>
+      </div>`;
+  }
+
+  function renderDamage(){
+    const attacker = getPokemon(state.attacker), defender = getPokemon(state.defender);
+    if(!attacker){ el.damagePanel.className = "panel empty"; el.damagePanel.innerHTML = "<p>공격 포켓몬을 먼저 선택하세요.</p>"; return; }
+    if(!defender){
+      const cur = calcStats(attacker, Number(el.currentLevel.value), getAtkIvs());
+      const tar = calcStats(attacker, Number(el.targetLevel.value), getAtkIvs());
+      const ratio = tar.attack / cur.attack;
+      el.damagePanel.className = "panel";
+      el.damagePanel.innerHTML = `<div class="box"><h3>대상 포켓몬이 없어서 공격력 기준만 계산했습니다.</h3><div class="formula">현재 레벨 대비 목표 레벨의 공격력 배율은 <strong class="${cls(ratio)}">${fmt(ratio,4)}배 (${pct(ratio)})</strong> 입니다.</div></div>`;
+      return;
+    }
+    const mode = el.mode.value, fast = getMove(el.fastMove.value, mode, "fast"), charged = getMove(el.chargedMove.value, mode, "charged");
+    if(!fast && !charged){ el.damagePanel.className = "panel empty"; el.damagePanel.innerHTML = "<p>기술을 하나 이상 선택하면 단발 데미지 차이를 계산합니다.</p>"; return; }
+    const atkIvs = getAtkIvs(), defIvs = getDefIvs();
+    const sections = [];
+    [["노말 기술", fast],["스페셜 기술", charged]].forEach(([label, move]) => {
+      if(!move) return;
+      const current = calcDamage({mode, move, attacker, attackerLevel:Number(el.currentLevel.value), defender, defenderLevel:Number(el.defenderLevel.value), atkIvs, defIvs});
+      const target = calcDamage({mode, move, attacker, attackerLevel:Number(el.targetLevel.value), defender, defenderLevel:Number(el.defenderLevel.value), atkIvs, defIvs});
+      const ratio = target.damage / current.damage;
+      sections.push(`<div class="box"><h3>${label}: ${esc(move.name)}</h3><div class="sumgrid" style="margin-top:12px"><div class="box"><span>현재 레벨 데미지</span><strong>${fmtNum(current.damage)}</strong></div><div class="box"><span>목표 레벨 데미지</span><strong>${fmtNum(target.damage)}</strong></div><div class="box"><span>데미지 차이</span><strong class="${cls(ratio)}">${pct(ratio)}</strong></div><div class="box"><span>배율</span><strong class="${cls(ratio)}">${fmt(ratio,4)}배</strong></div></div><div class="formula"><div>위력: <strong>${move.power}</strong> · 타입: <strong>${TYPE_KO[move.type] || move.type}</strong> · 대상 타입: <strong>${defender.types.map(t=>TYPE_KO[t] || t).join(" / ")}</strong></div><div>STAB: <strong>${current.stab > 1 ? "예 (1.2)" : "아니오"}</strong> · 상성 배율: <strong>${fmt(current.eff,3)}</strong></div><div>PvE 날씨: <strong>${mode === "pve" ? `${current.weather > 1 ? `${WEATHER_KO[el.weather.value] || el.weather.value} 적용` : "없음"} (${fmt(current.weather,2)})` : "미적용"}</strong> · PvE 프렌드: <strong>${mode === "pve" ? fmt(current.friend,2) : "미적용"}</strong></div><div>계산에 사용한 대상 방어력: <strong>${fmt(current.d.defense,3)}</strong> (대상 레벨 ${el.defenderLevel.value})</div></div></div>`);
+    });
+    el.damagePanel.className = "panel";
+    el.damagePanel.innerHTML = `<div class="sub">${sections.join("")}</div>`;
+  }
+
+  function renderTable(){
+    const attacker = getPokemon(state.attacker);
+    if(!attacker){ el.levelBody.innerHTML = `<tr><td colspan="6" class="table-empty">공격 포켓몬을 선택하면 표가 채워집니다.</td></tr>`; return; }
+    const atkIvs = getAtkIvs();
+    el.levelBody.innerHTML = LEVELS.map(level => { const s = calcStats(attacker, level, atkIvs); return `<tr><td>${level}</td><td>${fmt(s.cpm,9)}</td><td>${fmt(s.attack,3)}</td><td>${fmt(s.defense,3)}</td><td>${fmtNum(s.hp)}</td><td>${fmtNum(s.cp)}</td></tr>`; }).join("");
+  }
+
+  function refresh(){
+    const attacker = getPokemon(state.attacker), defender = getPokemon(state.defender);
+    el.attackerCard.innerHTML = attacker ? cardHTML(attacker, "") : "<p>공격 포켓몬을 선택하세요.</p>";
+    el.attackerCard.className = attacker ? "pk-card" : "pk-card empty";
+    el.defenderCard.innerHTML = defender ? cardHTML(defender, "") : "<p>대상 포켓몬을 선택하면 실제 기술 데미지를 계산합니다.</p>";
+    el.defenderCard.className = defender ? "pk-card" : "pk-card empty";
+    renderMoveSelects(); renderSummary(); renderDamage(); renderTable();
+  }
+
+  function setupSearch(input, dropdown, role){
+    let activeIndex = 0;
+    const selectPokemon = (p) => {
+      if(role === "attacker"){ state.attacker = p.id; el.attackerSearch.value = p.koName; }
+      else { state.defender = p.id; el.defenderSearch.value = p.koName; }
+      closeDropdown(dropdown); refresh();
+    };
+    const draw = () => { const items = resultList(input.value); activeIndex = 0; drawDropdown(dropdown, items, selectPokemon, activeIndex); };
+    input.addEventListener("input", draw);
+    input.addEventListener("compositionend", draw);
+    input.addEventListener("focus", draw);
+    input.addEventListener("keydown", (e) => {
+      const items = resultList(input.value);
+      if(!items.length) return;
+      if(e.key === "ArrowDown"){ e.preventDefault(); activeIndex = Math.min(activeIndex + 1, items.length - 1); drawDropdown(dropdown, items, selectPokemon, activeIndex); }
+      else if(e.key === "ArrowUp"){ e.preventDefault(); activeIndex = Math.max(activeIndex - 1, 0); drawDropdown(dropdown, items, selectPokemon, activeIndex); }
+      else if(e.key === "Enter"){ e.preventDefault(); selectPokemon(items[activeIndex] || items[0]); }
+      else if(e.key === "Escape"){ closeDropdown(dropdown); }
+    });
+    document.addEventListener("click", e => { if(!dropdown.contains(e.target) && !input.contains(e.target)) closeDropdown(dropdown); });
+  }
+
+  async function fetchJson(url){ const res = await fetch(url, {cache:"no-store"}); if(!res.ok) throw new Error(`${url} (${res.status})`); return res.json(); }
+  async function fetchText(url){ const res = await fetch(url, {cache:"no-store"}); if(!res.ok) throw new Error(`${url} (${res.status})`); return res.text(); }
+
+  async function load(){
+    setLoading("데이터 불러오는 중…","포켓몬고 데이터와 이름 인덱스를 가져오고 있습니다.");
+    const core = await Promise.allSettled([
+      fetchJson(API.released), fetchJson(API.names), fetchJson(API.stats), fetchJson(API.types), fetchJson(API.moves),
+      fetchJson(API.fast), fetchJson(API.charged), fetchJson(API.pvpFast), fetchJson(API.pvpCharged), fetchJson(API.effect), fetchJson(API.weather)
     ]);
-    if (pkRes.ok) {
-      const pk = await pkRes.json();
-      S.types = pk.types.map(t => {
-        const e = t.type.name;
-        return e[0].toUpperCase() + e.slice(1);
-      });
+
+    const [releasedR, namesR, statsR, typesR, poolsR, fastR, chargedR, pvpFastR, pvpChargedR, effectR, weatherR] = core;
+    const failed = core.map((r,i)=>({i, ok:r.status==="fulfilled", reason:r.status==="rejected" ? r.reason?.message || String(r.reason) : ""})).filter(x=>!x.ok);
+    if(failed.length) throw new Error(`PoGoAPI 로딩 실패 ${failed.length}건`);
+
+    const released = releasedR.value, pogoNames = namesR.value, stats = statsR.value, types = typesR.value, pools = poolsR.value, fast = fastR.value, charged = chargedR.value, pvpFast = pvpFastR.value, pvpCharged = pvpChargedR.value, effect = effectR.value, weather = weatherR.value;
+
+    state.stats = indexById(stats, "id");
+    state.types = groupById(types, "pokemon_id");
+    state.pools = groupById(pools, "pokemon_id");
+    state.effect = effect;
+    state.weather = weather;
+    state.moveMap.pveFast = new Map(fast.map(m => [m.name, m]));
+    state.moveMap.pveCharged = new Map(charged.map(m => [m.name, m]));
+    state.moveMap.pvpFast = new Map(pvpFast.map(m => [m.name, m]));
+    state.moveMap.pvpCharged = new Map(pvpCharged.map(m => [m.name, m]));
+
+    setLoading("이름 인덱스 구성 중…","한국어 이름을 붙이는 중입니다.", `종족값 ${stats.length}건 · 기술풀 ${pools.length}건`);
+
+    let species = [], speciesNames = [], koreanOk = false;
+    try {
+      const [speciesText, speciesNamesText] = await Promise.all([fetchText(API.speciesCsv), fetchText(API.speciesNamesCsv)]);
+      species = parseCsv(speciesText);
+      speciesNames = parseCsv(speciesNamesText);
+      koreanOk = true;
+    } catch (err) {
+      console.warn("한국어 이름 CSV 로딩 실패", err);
     }
-    if (spRes.ok) {
-      const sp = await spRes.json();
-      const ko = sp.names && sp.names.find(n => n.language.name === 'ko');
-      S.krName = ko ? ko.name : p.n;
-    }
-  } catch (e) {
-    // PokeAPI CORS blocked in preview — works fine on GitHub Pages
-    // 영어 이름으로 계속 표시
+
+    const enById = new Map();
+    Object.keys(pogoNames || {}).forEach(key => {
+      const row = pogoNames[key];
+      const id = Number(row?.id ?? key);
+      if(Number.isFinite(id) && row?.name) enById.set(id, row.name);
+    });
+    species.forEach(r => { const id = Number(r.id); if(Number.isFinite(id) && !enById.has(id) && r.identifier) enById.set(id, r.identifier); });
+
+    const koById = new Map();
+    speciesNames.forEach(r => { if(String(r.local_language_id) !== "3") return; const id = Number(r.pokemon_species_id); if(Number.isFinite(id) && r.name) koById.set(id, r.name); });
+
+    const releasedIds = Object.keys(released).map(Number).filter(Number.isFinite);
+    state.search = releasedIds.filter(id => state.stats.has(id) && enById.has(id)).map(id => ({
+      id,
+      enName: enById.get(id),
+      pogoName: released[String(id)]?.name || released[id]?.name || enById.get(id),
+      koName: koById.get(id) || titleCase(enById.get(id))
+    })).sort((a,b)=>a.id-b.id);
+
+    if(!state.search.length) throw new Error("검색 인덱스를 만들지 못했습니다.");
+
+    state.attacker = state.search.find(p => norm(p.koName) === norm("메타그로스") || norm(p.enName) === "metagross")?.id || state.search[0].id;
+    state.defender = state.search.find(p => norm(p.koName) === norm("해피너스") || norm(p.enName) === "blissey")?.id || state.search[1]?.id || state.search[0].id;
+
+    el.attackerSearch.value = getPokemon(state.attacker)?.koName || "";
+    el.defenderSearch.value = getPokemon(state.defender)?.koName || "";
+
+    setLoading("로드 완료","검색창에 바로 입력할 수 있습니다.", `검색 인덱스 ${state.search.length}건 · 한국어 이름 ${koreanOk ? "적용" : "실패(영문 fallback)"}`);
+    setTimeout(() => el.loadingCard.classList.add("hide"), 600);
+    refresh();
   }
 
-  renderCard();
-  renderMoves();
-}
+  fillLevelOptions();
+  setupSearch(el.attackerSearch, el.attackerDropdown, "attacker");
+  setupSearch(el.defenderSearch, el.defenderDropdown, "defender");
+  [el.mode, el.currentLevel, el.targetLevel, el.defenderLevel, el.friendBoost, el.weather, el.atkIvAtk, el.atkIvDef, el.atkIvSta, el.defIvDef, el.defIvSta, el.fastMove, el.chargedMove].forEach(node => { node.addEventListener("change", refresh); node.addEventListener("input", refresh); });
 
-// ═══════════════════════════════════════════════════════
-// SEARCH
-// ═══════════════════════════════════════════════════════
-const searchQ  = document.getElementById('searchQ');
-const dropdown = document.getElementById('dropdown');
-
-searchQ.addEventListener('input', () => {
-  const q = searchQ.value.trim().toLowerCase();
-  if (!q) { dropdown.classList.remove('open'); return; }
-
-  const results = PKM.filter(p =>
-    p.n.toLowerCase().includes(q) || String(p.id).includes(q)
-  ).slice(0, 20);
-
-  if (!results.length) { dropdown.classList.remove('open'); return; }
-
-  dropdown.innerHTML = results.map(p => `
-    <div class="dd-item" data-id="${p.id}">
-      <img class="dd-sprite" src="${spriteURL(p.id)}" alt="" onerror="this.style.opacity=.2">
-      <span class="dd-num">#${String(p.id).padStart(3,'0')}</span>
-      <span class="dd-name">${p.n}</span>
-      <span class="dd-atk">ATK ${p.a}</span>
-    </div>`).join('');
-
-  dropdown.classList.add('open');
-});
-
-dropdown.addEventListener('click', e => {
-  const item = e.target.closest('.dd-item');
-  if (!item) return;
-  const p = PKM.find(x => x.id === +item.dataset.id);
-  if (p) {
-    searchQ.value = p.n;
-    dropdown.classList.remove('open');
-    selectPokemon(p);
-  }
-});
-
-document.addEventListener('click', e => {
-  if (!e.target.closest('.search-wrap')) dropdown.classList.remove('open');
-});
-
-// ═══════════════════════════════════════════════════════
-// LEVEL SLIDERS
-// ═══════════════════════════════════════════════════════
-const curRange = document.getElementById('curRange');
-const tgtRange = document.getElementById('tgtRange');
-const curNum   = document.getElementById('curNum');
-const tgtNum   = document.getElementById('tgtNum');
-
-curRange.max = tgtRange.max = LVS.length;
-curRange.value = l2s(40);
-tgtRange.value = l2s(50);
-
-function onLevel() {
-  S.curLv = s2l(+curRange.value);
-  S.tgtLv = s2l(+tgtRange.value);
-  curNum.textContent = S.curLv;
-  tgtNum.textContent = S.tgtLv;
-  renderUplift();
-  if (S.poke) { renderMoves(); renderCPM(); }
-}
-curRange.addEventListener('input', onLevel);
-tgtRange.addEventListener('input', onLevel);
-
-// ═══════════════════════════════════════════════════════
-// IV / DEF / EFFECT CONTROLS
-// ═══════════════════════════════════════════════════════
-const ivRange = document.getElementById('ivRange');
-const ivVal   = document.getElementById('ivVal');
-ivRange.addEventListener('input', () => {
-  S.iv = +ivRange.value;
-  ivVal.textContent = S.iv;
-  renderUplift();
-  if (S.poke) { renderMoves(); renderCPM(); }
-});
-
-document.getElementById('defInput').addEventListener('input', function() {
-  S.def = Math.max(1, +this.value || 100);
-  if (S.poke) renderMoves();
-});
-
-document.getElementById('effInput').addEventListener('change', function() {
-  S.eff = +this.value;
-  if (S.poke) renderMoves();
-});
-
-// ═══════════════════════════════════════════════════════
-// INIT — 가디안(#282) 기본 선택
-// ═══════════════════════════════════════════════════════
-onLevel();
-const gardevoir = PKM.find(p => p.id === 282);
-if (gardevoir) {
-  searchQ.value = gardevoir.n;
-  selectPokemon(gardevoir);
-}
+  load().catch(err => {
+    console.error(err);
+    el.loadingCard.classList.remove("hide");
+    setLoading("데이터 로딩 실패", "외부 API 요청이 실패했습니다. GitHub Pages에서 다시 열거나 잠시 후 새로고침해 보세요.", esc(err.message));
+    el.summaryPanel.className = "panel empty";
+    el.summaryPanel.innerHTML = `<div class="error-box"><p>API 로딩 실패: ${esc(err.message)}</p></div>`;
+  });
+})();
 </script>
 </body>
 </html>
