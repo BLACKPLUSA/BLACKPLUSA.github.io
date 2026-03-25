@@ -227,16 +227,59 @@ input[type="range"]::-webkit-slider-thumb {
 
 /* ── UPLIFT BANNER ── */
 .uplift {
-  display: flex; align-items: center; gap: 14px;
   margin-top: 16px; padding: 13px 16px;
   background: rgba(240,196,25,.05);
   border: 1px solid rgba(240,196,25,.15);
   border-radius: var(--rads);
 }
-.uplift-pct { font-family: var(--mono); font-size: 30px; font-weight: 700; color: var(--acc); line-height: 1; white-space: nowrap; }
+.uplift-head {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 12px;
+}
+.uplift-pct {
+  font-family: var(--mono); font-size: 30px; font-weight: 700;
+  color: var(--acc); line-height: 1; white-space: nowrap;
+}
 .uplift-pct small { font-size: 15px; }
 .uplift-info { font-size: 12px; color: var(--t2); line-height: 1.7; }
 .uplift-info b { color: var(--t1); font-weight: 600; }
+
+.uplift-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.u-stat {
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--b1);
+  border-radius: 8px;
+  padding: 10px 10px 9px;
+}
+.u-k {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--t3);
+  margin-bottom: 5px;
+}
+.u-v {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--t1);
+  line-height: 1.5;
+}
+.u-d {
+  margin-top: 4px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--t2);
+}
+.u-d.up { color: var(--gr); }
+.u-d.down { color: var(--re); }
+
+@media (max-width: 720px) {
+  .uplift-head { flex-direction: column; align-items: flex-start; }
+  .uplift-grid { grid-template-columns: 1fr 1fr; }
+}
 
 /* ── MOVE TABLE ── */
 .move-tbl { width: 100%; border-collapse: collapse; }
@@ -405,17 +448,33 @@ input[type="range"]::-webkit-slider-thumb {
           </div>
 
           <div class="uplift">
-            <div class="uplift-pct" id="upliftPct">—<small>%</small></div>
-            <div class="uplift-info" id="upliftInfo">레벨을 설정하세요</div>
+            <div class="uplift-head">
+              <div class="uplift-pct" id="upliftPct">—<small>%</small></div>
+              <div class="uplift-info" id="upliftInfo">레벨을 설정하세요</div>
+            </div>
+            <div class="uplift-grid" id="upliftGrid">
+              <div class="u-stat">
+                <div class="u-k">ATK</div>
+                <div class="u-v">—</div>
+                <div class="u-d">—</div>
+              </div>
+              <div class="u-stat">
+                <div class="u-k">DEF</div>
+                <div class="u-v">—</div>
+                <div class="u-d">—</div>
+              </div>
+              <div class="u-stat">
+                <div class="u-k">HP</div>
+                <div class="u-v">—</div>
+                <div class="u-d">—</div>
+              </div>
+              <div class="u-stat">
+                <div class="u-k">TDO</div>
+                <div class="u-v">—</div>
+                <div class="u-d">—</div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-
-      <!-- Moves -->
-      <div class="card">
-        <div class="card-head"><span class="card-title">⚔&nbsp; 기술별 데미지</span></div>
-        <div id="movePanel" class="card-body">
-          <div class="empty">포켓몬을 검색하면 기술 정보가 표시됩니다.</div>
         </div>
       </div>
 
@@ -426,6 +485,14 @@ input[type="range"]::-webkit-slider-thumb {
           <div id="cpmPanel" style="padding:14px">
             <div class="empty">포켓몬을 선택하면 표시됩니다.</div>
           </div>
+        </div>
+      </div>
+
+      <!-- Moves -->
+      <div class="card">
+        <div class="card-head"><span class="card-title">⚔&nbsp; 기술별 데미지</span></div>
+        <div id="movePanel" class="card-body">
+          <div class="empty">포켓몬을 검색하면 기술 정보가 표시됩니다.</div>
         </div>
       </div>
 
@@ -1649,37 +1716,57 @@ function renderCard() {
 function renderMoves() {
   const p = S.poke;
   if (!p) return;
-  const ms = MS[p.id];
-  if (!ms) {
+
+  const all = getMoveList(p);
+  if (!all.length) {
     document.getElementById('movePanel').innerHTML = '<div class="empty">이 포켓몬의 기술 데이터가 없습니다.</div>';
     return;
   }
-  const fl = FM.filter(m => ms.f.includes(m.n)).map(m => ({...m, k:'f'}));
-  const cl = CM.filter(m => ms.c.includes(m.n)).map(m => ({...m, k:'c'}));
-  const all = [...fl, ...cl];
+
+  const hp1  = effHp(p, S.curLv);
+  const hp2  = effHp(p, S.tgtLv);
+  const def1 = effDef(p, S.curLv);
+  const def2 = effDef(p, S.tgtLv);
 
   const rows = all.map(m => {
     const stab = (S.types || []).includes(m.t) ? 1.2 : 1.0;
-    const d1 = calcDmg(p.a, S.iv, S.curLv, m.p, stab, S.eff, S.def);
-    const d2 = calcDmg(p.a, S.iv, S.tgtLv, m.p, stab, S.eff, S.def);
-    const dps1 = (d1 / (m.d/1000)).toFixed(1);
-    const dps2 = (d2 / (m.d/1000)).toFixed(1);
-    const diff = d2 - d1;
     const tcl  = TC[m.t] || '';
     const stabMark = stab > 1 ? '<span class="stab-star">★</span>' : '';
-    const diffHtml = diff > 0
-      ? `<span class="d-diff-up">+${diff}</span>`
-      : `<span class="d-diff-eq">—</span>`;
+
+    const d1 = calcDmg(p.a, S.iv, S.curLv, m.p, stab, S.eff, S.def);
+    const d2 = calcDmg(p.a, S.iv, S.tgtLv, m.p, stab, S.eff, S.def);
+
+    const dps1 = d1 / (m.d / 1000);
+    const dps2 = d2 / (m.d / 1000);
+
+    const tdo1 = dps1 * hp1 * def1;
+    const tdo2 = dps2 * hp2 * def2;
+
+    const dmgDiff = d2 - d1;
+    const tdoPct = pctDiff(tdo1, tdo2);
+    const sign = tdoPct >= 0 ? '+' : '';
+
+    const diffHtml = `
+      <div>${dmgDiff > 0 ? `<span class="d-diff-up">DMG +${dmgDiff}</span>` : `<span class="d-diff-eq">DMG —</span>`}</div>
+      <div class="d-sub" style="color:${tdoPct >= 0 ? 'var(--gr)' : 'var(--re)'}">TDO ${sign}${tdoPct.toFixed(2)}%</div>
+    `;
+
     return `<tr>
       <td>
-        <div class="mv-name">${m.n}${stabMark} <span class="mv-badge mv-${m.k==='f'?'fast':'charge'}">${m.k==='f'?'노말':'스페셜'}</span></div>
+        <div class="mv-name">${m.n}${stabMark} <span class="mv-badge mv-${m.k === 'f' ? 'fast' : 'charge'}">${m.k === 'f' ? '노말' : '스페셜'}</span></div>
         <div class="mv-meta">
-          <span class="mv-ttype t-${tcl} tc-${tcl}" style="border-color:var(--tc,rgba(255,255,255,.15));color:var(--tc)">${TK[m.t]||m.t}</span>
-          위력 <b>${m.p}</b> · ${(m.d/1000).toFixed(1)}s · E${m.e>0?'+':''}${m.e}
+          <span class="mv-ttype t-${tcl} tc-${tcl}" style="border-color:var(--tc,rgba(255,255,255,.15));color:var(--tc)">${TK[m.t] || m.t}</span>
+          위력 <b>${m.p}</b> · ${(m.d / 1000).toFixed(1)}s · E${m.e > 0 ? '+' : ''}${m.e}
         </div>
       </td>
-      <td><div class="d-cur">${d1}</div><div class="d-sub">${dps1}/s</div></td>
-      <td><div class="d-tgt">${d2}</div><div class="d-sub" style="color:var(--gr)">${dps2}/s</div></td>
+      <td>
+        <div class="d-cur">${d1}</div>
+        <div class="d-sub">${dps1.toFixed(1)}/s · TDO ${fmtShort(tdo1)}</div>
+      </td>
+      <td>
+        <div class="d-tgt">${d2}</div>
+        <div class="d-sub" style="color:var(--gr)">${dps2.toFixed(1)}/s · TDO ${fmtShort(tdo2)}</div>
+      </td>
       <td>${diffHtml}</td>
     </tr>`;
   }).join('');
@@ -1696,6 +1783,7 @@ function renderMoves() {
     </table>
     <div style="margin-top:12px;font-size:10px;color:var(--t3);font-family:var(--mono)">
       ★ = STAB ×1.2 적용 &nbsp;|&nbsp; 방어자 DEF ${S.def} &nbsp;|&nbsp; 상성 ×${S.eff}
+      &nbsp;|&nbsp; TDO = DPS × HP × DEF
     </div>`;
 }
 
@@ -1705,17 +1793,23 @@ function renderMoves() {
 function renderCPM() {
   const p = S.poke;
   if (!p) return;
+
   const rows = LVS.map(lv => {
     const cpm = CPM[lv];
-    const atk = ((p.a + S.iv) * cpm).toFixed(2);
+    const atk = effAtk(p, lv).toFixed(2);
+    const def = effDef(p, lv).toFixed(2);
+    const hp  = effHp(p, lv);
     const isC = lv === S.curLv, isT = lv === S.tgtLv;
     const cls = isC && isT ? 'row-both' : isC ? 'row-cur' : isT ? 'row-tgt' : '';
     const tag = isC && isT ? '◆' : isC ? '◄' : isT ? '▶' : '';
     const lvHTML = Number.isInteger(lv) ? `<b class="lv-int">${lv}</b>` : `${lv}`;
+
     return `<tr class="${cls}">
       <td>${lvHTML}</td>
       <td>${cpm.toFixed(5)}</td>
       <td>${atk}</td>
+      <td>${def}</td>
+      <td>${hp}</td>
       <td style="font-size:10px">${tag}</td>
     </tr>`;
   }).join('');
@@ -1723,15 +1817,19 @@ function renderCPM() {
   document.getElementById('cpmPanel').innerHTML = `
     <table class="cpm-tbl">
       <thead><tr>
-        <th>레벨</th><th>CPM</th><th>실질 ATK (IV${S.iv})</th><th></th>
+        <th>레벨</th>
+        <th>CPM</th>
+        <th>ATK (IV${S.iv})</th>
+        <th>DEF</th>
+        <th>HP</th>
+        <th></th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
 
-  // 현재 레벨로 스크롤
   const trs = document.querySelectorAll('#cpmPanel .cpm-tbl tbody tr');
   const idx = LVS.indexOf(S.curLv);
-  if (trs[idx]) setTimeout(() => trs[idx].scrollIntoView({block:'center', behavior:'smooth'}), 80);
+  if (trs[idx]) setTimeout(() => trs[idx].scrollIntoView({ block:'center', behavior:'smooth' }), 80);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1739,18 +1837,135 @@ function renderCPM() {
 // ═══════════════════════════════════════════════════════
 function renderUplift() {
   const c = CPM[S.curLv], t = CPM[S.tgtLv];
-  const pct = (t/c - 1) * 100;
-  const sign = pct >= 0 ? '+' : '';
-  let info = '';
-  if (S.poke) {
-    const a1 = ((S.poke.a + S.iv) * c).toFixed(1);
-    const a2 = ((S.poke.a + S.iv) * t).toFixed(1);
-    info = `실질 공격력 <b>${a1}</b> → <b>${a2}</b>&nbsp;&nbsp;(Lv.${S.curLv} → Lv.${S.tgtLv})`;
-  } else {
-    info = `CPM &nbsp;${c.toFixed(5)} → ${t.toFixed(5)}`;
+
+  if (!S.poke) {
+    const pct = (t / c - 1) * 100;
+    const sign = pct >= 0 ? '+' : '';
+    document.getElementById('upliftPct').innerHTML = `${sign}${pct.toFixed(2)}<small>%</small>`;
+    document.getElementById('upliftInfo').innerHTML = `CPM ${c.toFixed(5)} → ${t.toFixed(5)}`;
+    document.getElementById('upliftGrid').innerHTML = `
+      <div class="u-stat"><div class="u-k">ATK</div><div class="u-v">—</div><div class="u-d">—</div></div>
+      <div class="u-stat"><div class="u-k">DEF</div><div class="u-v">—</div><div class="u-d">—</div></div>
+      <div class="u-stat"><div class="u-k">HP</div><div class="u-v">—</div><div class="u-d">—</div></div>
+      <div class="u-stat"><div class="u-k">TDO</div><div class="u-v">—</div><div class="u-d">—</div></div>
+    `;
+    return;
   }
-  document.getElementById('upliftPct').innerHTML = `${sign}${pct.toFixed(2)}<small>%</small>`;
-  document.getElementById('upliftInfo').innerHTML = info;
+
+  const p = S.poke;
+
+  const atk1 = effAtk(p, S.curLv);
+  const atk2 = effAtk(p, S.tgtLv);
+
+  const def1 = effDef(p, S.curLv);
+  const def2 = effDef(p, S.tgtLv);
+
+  const hp1 = effHp(p, S.curLv);
+  const hp2 = effHp(p, S.tgtLv);
+
+  const best1 = getBestTdoMove(p, S.curLv);
+  const best2 = getBestTdoMove(p, S.tgtLv);
+
+  const tdo1 = best1 ? best1.tdo : 0;
+  const tdo2 = best2 ? best2.tdo : 0;
+  const tdoPct = pctDiff(tdo1, tdo2);
+  const sign = tdoPct >= 0 ? '+' : '';
+
+  document.getElementById('upliftPct').innerHTML = `${sign}${tdoPct.toFixed(2)}<small>%</small>`;
+  document.getElementById('upliftInfo').innerHTML = `
+    Lv.${S.curLv} → Lv.${S.tgtLv}
+    &nbsp;·&nbsp; 최고 TDO 기준
+    ${best1 ? `<b>${best1.m.n}</b>` : '<b>—</b>'}
+    → ${best2 ? `<b>${best2.m.n}</b>` : '<b>—</b>'}
+  `;
+
+  document.getElementById('upliftGrid').innerHTML = [
+    statBox('ATK', atk1, atk2, 1),
+    statBox('DEF', def1, def2, 1),
+    statBox('HP', hp1, hp2, 0, x => Math.round(x).toLocaleString('ko-KR')),
+    statBox('TDO', tdo1, tdo2, 0, x => fmtShort(x))
+  ].join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// ????
+// ═══════════════════════════════════════════════════════
+function effAtk(p, lv) {
+  return (p.a + S.iv) * CPM[lv];
+}
+
+function effDef(p, lv) {
+  return p.d * CPM[lv];
+}
+
+function effHp(p, lv) {
+  return Math.floor(p.s * CPM[lv]);
+}
+
+function getMoveList(p) {
+  const ms = MS[p.id];
+  if (!ms) return [];
+  const fl = FM.filter(m => ms.f.includes(m.n)).map(m => ({ ...m, k:'f' }));
+  const cl = CM.filter(m => ms.c.includes(m.n)).map(m => ({ ...m, k:'c' }));
+  return [...fl, ...cl];
+}
+
+function calcMoveDmg(p, lv, m) {
+  const stab = (S.types || []).includes(m.t) ? 1.2 : 1.0;
+  return calcDmg(p.a, S.iv, lv, m.p, stab, S.eff, S.def);
+}
+
+function calcMoveDps(p, lv, m) {
+  return calcMoveDmg(p, lv, m) / (m.d / 1000);
+}
+
+function calcMoveTdo(p, lv, m) {
+  return calcMoveDps(p, lv, m) * effHp(p, lv) * effDef(p, lv);
+}
+
+function getBestTdoMove(p, lv) {
+  const all = getMoveList(p);
+  if (!all.length) return null;
+
+  let best = null;
+  for (const m of all) {
+    const tdo = calcMoveTdo(p, lv, m);
+    if (!best || tdo > best.tdo) {
+      best = { m, tdo };
+    }
+  }
+  return best;
+}
+
+function fmtShort(n) {
+  if (!isFinite(n)) return '—';
+  if (n >= 1000000) return (n / 1000000).toFixed(2) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+  return Math.round(n).toLocaleString('ko-KR');
+}
+
+function pctDiff(v1, v2) {
+  if (!v1) return 0;
+  return (v2 / v1 - 1) * 100;
+}
+
+function pctClass(p) {
+  if (p > 0.0001) return 'up';
+  if (p < -0.0001) return 'down';
+  return '';
+}
+
+function statBox(label, v1, v2, digits = 1, formatter = null) {
+  const f = formatter || ((x) => Number(x).toFixed(digits));
+  const p = pctDiff(v1, v2);
+  const sign = p >= 0 ? '+' : '';
+  return `
+    <div class="u-stat">
+      <div class="u-k">${label}</div>
+      <div class="u-v">${f(v1)} → ${f(v2)}</div>
+      <div class="u-d ${pctClass(p)}">${sign}${p.toFixed(2)}%</div>
+    </div>
+  `;
 }
 
 // ═══════════════════════════════════════════════════════
