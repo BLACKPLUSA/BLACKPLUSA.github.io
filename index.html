@@ -186,7 +186,7 @@ body::before {
 .card-body { padding: 16px; }
 
 /* ── CONTROLS ── */
-.ctrl-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.ctrl-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
 @media (max-width: 560px) { .ctrl-grid { grid-template-columns: 1fr 1fr; } }
 .ctrl-block label { display: block; font-size: 10px; font-family: var(--mono); color: var(--t3); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 6px; }
 .ctrl-block select,
@@ -410,13 +410,16 @@ input[type="range"]::-webkit-slider-thumb {
         <div class="card-body">
           <div class="ctrl-grid">
             <div class="ctrl-block">
-              <label>공격 IV &nbsp;<b id="ivVal" style="color:var(--acc);font-size:13px">15</b></label>
-              <div style="padding:4px 0">
-                <input type="range" id="ivRange" min="0" max="15" step="1" value="15" style="margin-bottom:4px">
-                <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--t3)">
-                  <span>0</span><span>5</span><span>10</span><span>15</span>
-                </div>
-              </div>
+              <label>공격 IV &nbsp;<b id="ivAtkVal" style="color:var(--acc);font-size:13px">15</b></label>
+              <input type="range" id="ivAtkRange" min="0" max="15" step="1" value="15">
+            </div>
+            <div class="ctrl-block">
+              <label>방어 IV &nbsp;<b id="ivDefVal" style="color:var(--bl);font-size:13px">15</b></label>
+              <input type="range" id="ivDefRange" min="0" max="15" step="1" value="15">
+            </div>
+            <div class="ctrl-block">
+              <label>체력 IV &nbsp;<b id="ivStaVal" style="color:var(--gr);font-size:13px">15</b></label>
+              <input type="range" id="ivStaRange" min="0" max="15" step="1" value="15">
             </div>
             <div class="ctrl-block">
               <label>방어자 DEF</label>
@@ -1651,7 +1654,7 @@ async function loadKoreanNames() {
   }
 }
 
-const S = { iv:15, def:100, eff:1.0, curLv:40, tgtLv:50, poke:null, krName:null, types:[] };
+const S = { iv:15, ivDef:15, ivSta:15, def:100, eff:1.0, curLv:40, tgtLv:50, poke:null, krName:null, types:[] };
 
 // ═══════════════════════════════════════════════════════
 // CORE CALC
@@ -1819,7 +1822,7 @@ function renderCPM() {
       <thead><tr>
         <th>레벨</th>
         <th>CPM</th>
-        <th>ATK (IV${S.iv})</th>
+        <th>ATK (A${S.iv}/D${S.ivDef}/S${S.ivSta})</th>
         <th>DEF</th>
         <th>HP</th>
         <th></th>
@@ -1895,11 +1898,11 @@ function effAtk(p, lv) {
 }
 
 function effDef(p, lv) {
-  return p.d * CPM[lv];
+  return (p.d + S.ivDef) * CPM[lv];
 }
-
-function effHp(p, lv) {
-  return Math.floor(p.s * CPM[lv]);
+  
+function effHp(p, lv)  {
+  return Math.floor((p.s + S.ivSta) * CPM[lv]);
 }
 
 function getMoveList(p) {
@@ -2076,23 +2079,20 @@ tgtRange.addEventListener('input', onLevel);
 // ═══════════════════════════════════════════════════════
 // IV / DEF / EFFECT CONTROLS
 // ═══════════════════════════════════════════════════════
-const ivRange = document.getElementById('ivRange');
-const ivVal   = document.getElementById('ivVal');
-ivRange.addEventListener('input', () => {
-  S.iv = +ivRange.value;
-  ivVal.textContent = S.iv;
-  renderUplift();
-  if (S.poke) { renderMoves(); renderCPM(); }
+document.getElementById('ivAtkRange').addEventListener('input', function() {
+  S.iv = +this.value;
+  document.getElementById('ivAtkVal').textContent = S.iv;
+  renderUplift(); if (S.poke) { renderMoves(); renderCPM(); }
 });
-
-document.getElementById('defInput').addEventListener('input', function() {
-  S.def = Math.max(1, +this.value || 100);
-  if (S.poke) renderMoves();
+document.getElementById('ivDefRange').addEventListener('input', function() {
+  S.ivDef = +this.value;
+  document.getElementById('ivDefVal').textContent = S.ivDef;
+  renderUplift(); if (S.poke) { renderMoves(); renderCPM(); }
 });
-
-document.getElementById('effInput').addEventListener('change', function() {
-  S.eff = +this.value;
-  if (S.poke) renderMoves();
+document.getElementById('ivStaRange').addEventListener('input', function() {
+  S.ivSta = +this.value;
+  document.getElementById('ivStaVal').textContent = S.ivSta;
+  renderUplift(); if (S.poke) { renderMoves(); renderCPM(); }
 });
 
 // ═══════════════════════════════════════════════════════
