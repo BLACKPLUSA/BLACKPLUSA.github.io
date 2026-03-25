@@ -227,16 +227,37 @@ input[type="range"]::-webkit-slider-thumb {
 
 /* ── UPLIFT BANNER ── */
 .uplift {
-  display: flex; align-items: center; gap: 14px;
-  margin-top: 16px; padding: 13px 16px;
+  margin-top: 16px;
   background: rgba(240,196,25,.05);
   border: 1px solid rgba(240,196,25,.15);
   border-radius: var(--rads);
+  overflow: hidden;
+}
+.uplift-top {
+  display: flex; align-items: center; gap: 14px;
+  padding: 13px 16px;
 }
 .uplift-pct { font-family: var(--mono); font-size: 30px; font-weight: 700; color: var(--acc); line-height: 1; white-space: nowrap; }
 .uplift-pct small { font-size: 15px; }
 .uplift-info { font-size: 12px; color: var(--t2); line-height: 1.7; }
 .uplift-info b { color: var(--t1); font-weight: 600; }
+.uplift-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  border-top: 1px solid rgba(240,196,25,.1);
+}
+.uplift-cell {
+  padding: 10px 8px; text-align: center;
+  border-right: 1px solid rgba(240,196,25,.08);
+}
+.uplift-cell:last-child { border-right: none; }
+.uc-label { font-size: 9px; font-family: var(--mono); color: var(--t3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+.uc-val { font-family: var(--mono); font-size: 13px; font-weight: 700; }
+.uc-pct { font-size: 10px; color: var(--t3); margin-top: 2px; }
+.uc-atk { color: #fbbf24; }
+.uc-def { color: var(--bl); }
+.uc-hp  { color: var(--gr); }
+.uc-tdo { color: var(--pu); }
+.uc-cpm { color: var(--acc); }
 
 /* ── MOVE TABLE ── */
 .move-tbl { width: 100%; border-collapse: collapse; }
@@ -405,8 +426,37 @@ input[type="range"]::-webkit-slider-thumb {
           </div>
 
           <div class="uplift">
-            <div class="uplift-pct" id="upliftPct">—<small>%</small></div>
-            <div class="uplift-info" id="upliftInfo">레벨을 설정하세요</div>
+            <div class="uplift-top">
+              <div class="uplift-pct" id="upliftPct">—<small>%</small></div>
+              <div class="uplift-info" id="upliftInfo">레벨을 설정하세요</div>
+            </div>
+            <div class="uplift-grid" id="upliftGrid" style="display:none">
+              <div class="uplift-cell">
+                <div class="uc-label">ATK</div>
+                <div class="uc-val uc-atk" id="ucAtk">—</div>
+                <div class="uc-pct" id="ucAtkP">—</div>
+              </div>
+              <div class="uplift-cell">
+                <div class="uc-label">DEF</div>
+                <div class="uc-val uc-def" id="ucDef">—</div>
+                <div class="uc-pct" id="ucDefP">—</div>
+              </div>
+              <div class="uplift-cell">
+                <div class="uc-label">HP</div>
+                <div class="uc-val uc-hp" id="ucHp">—</div>
+                <div class="uc-pct" id="ucHpP">—</div>
+              </div>
+              <div class="uplift-cell">
+                <div class="uc-label">TDO</div>
+                <div class="uc-val uc-tdo" id="ucTdo">—</div>
+                <div class="uc-pct" id="ucTdoP">—</div>
+              </div>
+              <div class="uplift-cell">
+                <div class="uc-label">CPM</div>
+                <div class="uc-val uc-cpm" id="ucCpm">—</div>
+                <div class="uc-pct" id="ucCpmP">—</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1739,18 +1789,53 @@ function renderCPM() {
 // ═══════════════════════════════════════════════════════
 function renderUplift() {
   const c = CPM[S.curLv], t = CPM[S.tgtLv];
-  const pct = (t/c - 1) * 100;
-  const sign = pct >= 0 ? '+' : '';
-  let info = '';
-  if (S.poke) {
-    const a1 = ((S.poke.a + S.iv) * c).toFixed(1);
-    const a2 = ((S.poke.a + S.iv) * t).toFixed(1);
-    info = `실질 공격력 <b>${a1}</b> → <b>${a2}</b>&nbsp;&nbsp;(Lv.${S.curLv} → Lv.${S.tgtLv})`;
-  } else {
-    info = `CPM &nbsp;${c.toFixed(5)} → ${t.toFixed(5)}`;
+  const cpmPct = (t/c - 1) * 100;
+  const sign = cpmPct >= 0 ? '+' : '';
+
+  const grid = document.getElementById('upliftGrid');
+
+  if (!S.poke) {
+    document.getElementById('upliftPct').innerHTML = `${sign}${cpmPct.toFixed(2)}<small>%</small>`;
+    document.getElementById('upliftInfo').innerHTML = `CPM &nbsp;${c.toFixed(5)} → ${t.toFixed(5)}`;
+    grid.style.display = 'none';
+    return;
   }
-  document.getElementById('upliftPct').innerHTML = `${sign}${pct.toFixed(2)}<small>%</small>`;
-  document.getElementById('upliftInfo').innerHTML = info;
+
+  const p = S.poke;
+  const aIV = S.iv;
+  // 방어/체력 IV는 별도 슬라이더 없으므로 공격 IV와 동일하게 가정
+  const dIV = S.iv, sIV = S.iv;
+
+  const atk1 = (p.a + aIV) * c,  atk2 = (p.a + aIV) * t;
+  const def1 = (p.d + dIV) * c,  def2 = (p.d + dIV) * t;
+  const hp1  = Math.floor((p.s + sIV) * c);
+  const hp2  = Math.floor((p.s + sIV) * t);
+  const tdo1 = atk1 * hp1,       tdo2 = atk2 * hp2;
+
+  const atkPct = (atk2/atk1 - 1) * 100;
+  const defPct = (def2/def1 - 1) * 100;
+  const hpPct  = (hp2/hp1   - 1) * 100;
+  const tdoPct = (tdo2/tdo1 - 1) * 100;
+
+  const fmt = v => (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+
+  // 메인 배너: TDO % 표시
+  document.getElementById('upliftPct').innerHTML = `${fmt(tdoPct).replace('%','')}<small>%</small>`;
+  document.getElementById('upliftInfo').innerHTML =
+    `TDO 기준 상승률 &nbsp;(Lv.${S.curLv} → Lv.${S.tgtLv})`;
+
+  // 그리드
+  grid.style.display = 'grid';
+  document.getElementById('ucAtk').textContent  = atk2.toFixed(1);
+  document.getElementById('ucAtkP').textContent = fmt(atkPct);
+  document.getElementById('ucDef').textContent  = def2.toFixed(1);
+  document.getElementById('ucDefP').textContent = fmt(defPct);
+  document.getElementById('ucHp').textContent   = hp2;
+  document.getElementById('ucHpP').textContent  = fmt(hpPct);
+  document.getElementById('ucTdo').textContent  = Math.round(tdo2).toLocaleString();
+  document.getElementById('ucTdoP').textContent = fmt(tdoPct);
+  document.getElementById('ucCpm').textContent  = t.toFixed(5);
+  document.getElementById('ucCpmP').textContent = fmt(cpmPct);
 }
 
 // ═══════════════════════════════════════════════════════
