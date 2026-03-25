@@ -6,7 +6,7 @@
   <title>Pokémon GO 딜 차이 계산기</title>
   <style>
     :root{
-      --bg:#0b1220;--panel:#111827;--panel2:#0f172a;--line:#243041;
+      --bg:#0b1220;--panel:#111827;--line:#243041;
       --text:#e5eefc;--muted:#9db0cb;--accent:#38bdf8;--good:#86efac;--bad:#fda4af;--warn:#fcd34d;
     }
     *{box-sizing:border-box}
@@ -24,7 +24,6 @@
     label{display:block;margin:0 0 6px;color:var(--muted);font-size:.92rem}
     input,select,button{width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:#09111e;color:var(--text);font-size:.96rem}
     input:focus,select:focus,button:focus{outline:2px solid rgba(56,189,248,.32);border-color:var(--accent)}
-    button{cursor:pointer}
     .search{position:relative}
     .dropdown{position:absolute;top:calc(100% + 8px);left:0;right:0;display:none;z-index:30;max-height:280px;overflow:auto;border-radius:14px;background:rgba(8,16,29,.98);border:1px solid rgba(125,211,252,.14)}
     .dropdown.open{display:block}
@@ -54,7 +53,9 @@
     th,td{padding:11px 12px;border-bottom:1px solid rgba(157,176,203,.08);text-align:right}
     th:first-child,td:first-child{text-align:left}
     thead th{position:sticky;top:0;background:#0a1525}
-    .loading{display:flex;align-items:center;gap:12px}.spin{width:18px;height:18px;border:2px solid rgba(125,211,252,.22);border-top-color:var(--accent);border-radius:50%;animation:rot 1s linear infinite}@keyframes rot{to{transform:rotate(360deg)}}
+    .loading{display:flex;align-items:center;gap:12px}
+    .spin{width:18px;height:18px;border:2px solid rgba(125,211,252,.22);border-top-color:var(--accent);border-radius:50%;animation:rot 1s linear infinite}
+    @keyframes rot{to{transform:rotate(360deg)}}
     .hide{display:none!important}
     #debug{margin-top:10px;font-size:.9rem;line-height:1.45}
     @media (max-width:1100px){.hero,.grid2,.controls,.controls.small,.controls.moves,.sumgrid,.valgrid,.stats3,.pk-inner{grid-template-columns:1fr}}
@@ -93,7 +94,7 @@
   <section class="grid2">
     <div class="card">
       <h2>공격 포켓몬</h2>
-      <p class="muted" style="margin-top:6px">한글 1글자 이상 입력하면 드롭다운 검색이 뜹니다. 한국어 이름 로딩이 실패하면 영어 이름으로라도 검색됩니다.</p>
+      <p class="muted" style="margin-top:6px">한글 1글자 이상 입력하면 드롭다운 검색이 뜹니다. 한국어 이름을 못 불러오면 영어 이름으로라도 검색됩니다.</p>
       <div class="search" style="margin-top:12px">
         <label for="attackerSearch">포켓몬 이름</label>
         <input id="attackerSearch" type="text" placeholder="예: 메타그로스, 루카리오, 망나뇽" autocomplete="off" />
@@ -206,9 +207,8 @@
   const LEVELS = Object.keys(CPM).map(Number);
   const TYPE_KO = {Normal:"노말",Fire:"불꽃",Water:"물",Electric:"전기",Grass:"풀",Ice:"얼음",Fighting:"격투",Poison:"독",Ground:"땅",Flying:"비행",Psychic:"에스퍼",Bug:"벌레",Rock:"바위",Ghost:"고스트",Dragon:"드래곤",Dark:"악",Steel:"강철",Fairy:"페어리"};
   const WEATHER_KO = {Clear:"맑음",Rainy:"비","Partly Cloudy":"구름 조금",Cloudy:"흐림",Windy:"강풍",Snow:"눈",Fog:"안개"};
+
   const API = {
-    released:"https://pogoapi.net/api/v1/released_pokemon.json",
-    names:"https://pogoapi.net/api/v1/pokemon_names.json",
     stats:"https://pogoapi.net/api/v1/pokemon_stats.json",
     types:"https://pogoapi.net/api/v1/pokemon_types.json",
     moves:"https://pogoapi.net/api/v1/current_pokemon_moves.json",
@@ -218,22 +218,50 @@
     pvpCharged:"https://pogoapi.net/api/v1/pvp_charged_moves.json",
     effect:"https://pogoapi.net/api/v1/type_effectiveness.json",
     weather:"https://pogoapi.net/api/v1/weather_boosts.json",
-    speciesCsv:"https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/pokemon_species.csv",
     speciesNamesCsv:"https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/pokemon_species_names.csv",
     artwork:(id)=>`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`
   };
 
   const el = {
-    loadingCard:document.querySelector("#loadingCard"), loadingTitle:document.querySelector("#loadingTitle"), loadingText:document.querySelector("#loadingText"), debug:document.querySelector("#debug"),
-    attackerSearch:document.querySelector("#attackerSearch"), attackerDropdown:document.querySelector("#attackerDropdown"), attackerCard:document.querySelector("#attackerCard"),
-    defenderSearch:document.querySelector("#defenderSearch"), defenderDropdown:document.querySelector("#defenderDropdown"), defenderCard:document.querySelector("#defenderCard"),
-    mode:document.querySelector("#mode"), currentLevel:document.querySelector("#currentLevel"), targetLevel:document.querySelector("#targetLevel"), defenderLevel:document.querySelector("#defenderLevel"),
-    friendBoost:document.querySelector("#friendBoost"), weather:document.querySelector("#weather"),
-    atkIvAtk:document.querySelector("#atkIvAtk"), atkIvDef:document.querySelector("#atkIvDef"), atkIvSta:document.querySelector("#atkIvSta"), defIvDef:document.querySelector("#defIvDef"), defIvSta:document.querySelector("#defIvSta"),
-    fastMove:document.querySelector("#fastMove"), chargedMove:document.querySelector("#chargedMove"), summaryPanel:document.querySelector("#summaryPanel"), damagePanel:document.querySelector("#damagePanel"), levelBody:document.querySelector("#levelBody")
+    loadingCard:document.querySelector("#loadingCard"),
+    loadingTitle:document.querySelector("#loadingTitle"),
+    loadingText:document.querySelector("#loadingText"),
+    debug:document.querySelector("#debug"),
+    attackerSearch:document.querySelector("#attackerSearch"),
+    attackerDropdown:document.querySelector("#attackerDropdown"),
+    attackerCard:document.querySelector("#attackerCard"),
+    defenderSearch:document.querySelector("#defenderSearch"),
+    defenderDropdown:document.querySelector("#defenderDropdown"),
+    defenderCard:document.querySelector("#defenderCard"),
+    mode:document.querySelector("#mode"),
+    currentLevel:document.querySelector("#currentLevel"),
+    targetLevel:document.querySelector("#targetLevel"),
+    defenderLevel:document.querySelector("#defenderLevel"),
+    friendBoost:document.querySelector("#friendBoost"),
+    weather:document.querySelector("#weather"),
+    atkIvAtk:document.querySelector("#atkIvAtk"),
+    atkIvDef:document.querySelector("#atkIvDef"),
+    atkIvSta:document.querySelector("#atkIvSta"),
+    defIvDef:document.querySelector("#defIvDef"),
+    defIvSta:document.querySelector("#defIvSta"),
+    fastMove:document.querySelector("#fastMove"),
+    chargedMove:document.querySelector("#chargedMove"),
+    summaryPanel:document.querySelector("#summaryPanel"),
+    damagePanel:document.querySelector("#damagePanel"),
+    levelBody:document.querySelector("#levelBody")
   };
 
-  const state = {search:[], stats:new Map(), types:new Map(), pools:new Map(), moveMap:{pveFast:new Map(),pveCharged:new Map(),pvpFast:new Map(),pvpCharged:new Map()}, effect:{}, weather:{}, attacker:null, defender:null};
+  const state = {
+    search:[],
+    statsById:new Map(),
+    typesById:new Map(),
+    poolsById:new Map(),
+    moveMap:{pveFast:new Map(),pveCharged:new Map(),pvpFast:new Map(),pvpCharged:new Map()},
+    effect:{},
+    weather:{},
+    attacker:null,
+    defender:null
+  };
 
   const esc = (v) => String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;");
   const norm = (v) => String(v ?? "").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g,"").replace(/[.'’`-]/g,"");
@@ -242,19 +270,42 @@
   const pct = (ratio) => `${(ratio-1)>=0?"+":""}${fmt((ratio-1)*100,2)}%`;
   const cls = (ratio) => ratio > 1.00001 ? "good" : ratio < 0.99999 ? "bad" : "warn";
   const iv = (v) => Math.max(0, Math.min(15, Math.round(Number(v) || 0)));
-  const pick = (list) => (list || []).find(x => x.form === "Normal") || (list || []).find(x => !x.form) || (list || [])[0] || null;
   const titleCase = (s) => String(s || "").replace(/(^|[\s-])([a-z])/g, (_, a, b) => a + b.toUpperCase());
 
-  function setLoading(title, text, debugText="") { el.loadingTitle.textContent = title; el.loadingText.textContent = text; el.debug.innerHTML = debugText; }
-  function fillLevelOptions(){ const html = LEVELS.map(l => `<option value="${l}">${l}</option>`).join(""); el.currentLevel.innerHTML = html; el.targetLevel.innerHTML = html; el.defenderLevel.innerHTML = html; el.currentLevel.value = "35"; el.targetLevel.value = "50"; el.defenderLevel.value = "40"; }
+  function setLoading(title, text, debugText=""){
+    el.loadingTitle.textContent = title;
+    el.loadingText.textContent = text;
+    el.debug.innerHTML = debugText;
+  }
+
+  function fillLevelOptions(){
+    const html = LEVELS.map(l => `<option value="${l}">${l}</option>`).join("");
+    el.currentLevel.innerHTML = html;
+    el.targetLevel.innerHTML = html;
+    el.defenderLevel.innerHTML = html;
+    el.currentLevel.value = "35";
+    el.targetLevel.value = "50";
+    el.defenderLevel.value = "40";
+  }
 
   function parseCsv(text){
-    const rows = []; let row = [], cell = "", q = false;
+    const rows = [];
+    let row = [], cell = "", q = false;
     for(let i=0;i<text.length;i++){
       const ch = text[i], nx = text[i+1];
-      if(ch === '"'){ if(q && nx === '"'){ cell += '"'; i++; } else q = !q; continue; }
+      if(ch === '"'){
+        if(q && nx === '"'){ cell += '"'; i++; }
+        else q = !q;
+        continue;
+      }
       if(ch === "," && !q){ row.push(cell); cell=""; continue; }
-      if((ch === "\n" || ch === "\r") && !q){ if(ch === "\r" && nx === "\n") i++; row.push(cell); cell=""; if(row.length > 1 || row[0] !== "") rows.push(row); row=[]; continue; }
+      if((ch === "\n" || ch === "\r") && !q){
+        if(ch === "\r" && nx === "\n") i++;
+        row.push(cell); cell="";
+        if(row.length > 1 || row[0] !== "") rows.push(row);
+        row = [];
+        continue;
+      }
       cell += ch;
     }
     if(cell.length || row.length){ row.push(cell); rows.push(row); }
@@ -263,22 +314,39 @@
     return body.map(r => Object.fromEntries(keys.map((k,i)=>[k, r[i] ?? ""])));
   }
 
-  function indexById(arr,key="id"){ const m = new Map(); arr.forEach(x => { const id = Number(x[key]); if(Number.isFinite(id)) m.set(id, x); }); return m; }
-  function groupById(arr,key="pokemon_id"){ const m = new Map(); arr.forEach(x => { const id = Number(x[key]); if(!Number.isFinite(id)) return; if(!m.has(id)) m.set(id, []); m.get(id).push(x); }); return m; }
+  function groupBy(arr, key){
+    const m = new Map();
+    arr.forEach(x => {
+      const id = Number(x[key]);
+      if(!Number.isFinite(id)) return;
+      if(!m.has(id)) m.set(id, []);
+      m.get(id).push(x);
+    });
+    return m;
+  }
+
+  function pickNormal(list){
+    if(!list || !list.length) return null;
+    return list.find(x => x.form === "Normal") || list.find(x => !x.form) || list[0];
+  }
 
   function getPokemon(id){
     if(!id) return null;
     const meta = state.search.find(x => x.id === Number(id));
     if(!meta) return null;
-    const stat = state.stats.get(Number(id));
-    const typeEntry = pick(state.types.get(Number(id)));
-    const moveEntry = pick(state.pools.get(Number(id)));
+    const stat = pickNormal(state.statsById.get(Number(id)));
+    const typeEntry = pickNormal(state.typesById.get(Number(id)));
+    const moveEntry = pickNormal(state.poolsById.get(Number(id)));
     return {
       ...meta,
-      form: moveEntry?.form || typeEntry?.form || "Normal",
+      form: moveEntry?.form || typeEntry?.form || stat?.form || "Normal",
       image: API.artwork(id),
       types: Array.isArray(typeEntry?.type) ? typeEntry.type : [],
-      stats:{ baseAttack:Number(stat?.base_attack ?? 0), baseDefense:Number(stat?.base_defense ?? 0), baseStamina:Number(stat?.base_stamina ?? 0) },
+      stats:{
+        baseAttack:Number(stat?.base_attack ?? 0),
+        baseDefense:Number(stat?.base_defense ?? 0),
+        baseStamina:Number(stat?.base_stamina ?? 0)
+      },
       fastMoves:[...new Set([...(moveEntry?.fast_moves || []), ...(moveEntry?.elite_fast_moves || [])])].sort((a,b)=>a.localeCompare(b)),
       chargedMoves:[...new Set([...(moveEntry?.charged_moves || []), ...(moveEntry?.elite_charged_moves || [])])].sort((a,b)=>a.localeCompare(b))
     };
@@ -292,7 +360,12 @@
     const atk = (pokemon.stats.baseAttack + ivs.attack) * m;
     const def = (pokemon.stats.baseDefense + ivs.defense) * m;
     const hp = Math.floor((pokemon.stats.baseStamina + ivs.stamina) * m);
-    const cp = Math.max(10, Math.floor(((pokemon.stats.baseAttack + ivs.attack) * Math.sqrt(pokemon.stats.baseDefense + ivs.defense) * Math.sqrt(pokemon.stats.baseStamina + ivs.stamina) * m * m) / 10));
+    const cp = Math.max(10, Math.floor(
+      ((pokemon.stats.baseAttack + ivs.attack) *
+      Math.sqrt(pokemon.stats.baseDefense + ivs.defense) *
+      Math.sqrt(pokemon.stats.baseStamina + ivs.stamina) *
+      m * m) / 10
+    ));
     return {level,cpm:m,attack:atk,defense:def,hp,cp};
   }
 
@@ -304,8 +377,16 @@
     return state.moveMap.pveCharged.get(name) || null;
   }
 
-  function typeMult(moveType, defTypes){ const row = state.effect[moveType] || {}; return defTypes.reduce((m,t)=>m * Number(row[t] ?? 1), 1); }
-  function weatherMult(moveType){ const w = el.weather.value; if(!w) return 1; return (state.weather[w] || []).includes(moveType) ? 1.2 : 1; }
+  function typeMult(moveType, defTypes){
+    const row = state.effect[moveType] || {};
+    return defTypes.reduce((m,t)=>m * Number(row[t] ?? 1), 1);
+  }
+
+  function weatherMult(moveType){
+    const w = el.weather.value;
+    if(!w) return 1;
+    return (state.weather[w] || []).includes(moveType) ? 1.2 : 1;
+  }
 
   function calcDamage({mode, move, attacker, attackerLevel, defender, defenderLevel, atkIvs, defIvs}){
     if(!move || !attacker || !defender) return null;
@@ -342,47 +423,84 @@
         <div class="muted">${esc(titleCase(p.enName))}</div>
       </div>
     `).join("");
-    box.querySelectorAll(".item").forEach(node => node.addEventListener("mousedown", (e) => { e.preventDefault(); const id = Number(node.dataset.id); const p = state.search.find(x => x.id === id); if(p) cb(p); }));
+    box.querySelectorAll(".item").forEach(node => {
+      node.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        const id = Number(node.dataset.id);
+        const p = state.search.find(x => x.id === id);
+        if(p) cb(p);
+      });
+    });
     box.classList.add("open");
   }
-  function closeDropdown(box){ box.classList.remove("open"); box.innerHTML = ""; }
 
-  function cardHTML(pokemon, emptyText){
-    if(!pokemon) return `<div class="pk-card empty"><p>${emptyText}</p></div>`;
+  function closeDropdown(box){
+    box.classList.remove("open");
+    box.innerHTML = "";
+  }
+
+  function cardHTML(pokemon){
     return `
-      <div class="pk-card">
-        <div class="pk-inner">
-          <div class="art"><img src="${esc(pokemon.image)}" alt="${esc(pokemon.koName)} 공식 일러스트" loading="lazy"></div>
-          <div>
-            <div class="row"><h3>${esc(pokemon.koName)}</h3><span class="badge">#${pokemon.id}</span><span class="badge">${esc(titleCase(pokemon.enName))}</span><span class="badge">폼: ${esc(pokemon.form)}</span></div>
-            <div class="row" style="margin-top:10px">${pokemon.types.length ? pokemon.types.map(t => `<span class="chip">${esc(TYPE_KO[t] || t)}</span>`).join("") : `<span class="badge">타입 정보 없음</span>`}</div>
-            <div class="stats3">
-              <div class="box"><span>기본 공격</span><strong>${fmtNum(pokemon.stats.baseAttack)}</strong></div>
-              <div class="box"><span>기본 방어</span><strong>${fmtNum(pokemon.stats.baseDefense)}</strong></div>
-              <div class="box"><span>기본 체력</span><strong>${fmtNum(pokemon.stats.baseStamina)}</strong></div>
-            </div>
+      <div class="pk-inner">
+        <div class="art"><img src="${esc(pokemon.image)}" alt="${esc(pokemon.koName)} 공식 일러스트" loading="lazy"></div>
+        <div>
+          <div class="row">
+            <h3>${esc(pokemon.koName)}</h3>
+            <span class="badge">#${pokemon.id}</span>
+            <span class="badge">${esc(titleCase(pokemon.enName))}</span>
+            <span class="badge">폼: ${esc(pokemon.form)}</span>
+          </div>
+          <div class="row" style="margin-top:10px">
+            ${pokemon.types.length ? pokemon.types.map(t => `<span class="chip">${esc(TYPE_KO[t] || t)}</span>`).join("") : `<span class="badge">타입 정보 없음</span>`}
+          </div>
+          <div class="stats3">
+            <div class="box"><span>기본 공격</span><strong>${fmtNum(pokemon.stats.baseAttack)}</strong></div>
+            <div class="box"><span>기본 방어</span><strong>${fmtNum(pokemon.stats.baseDefense)}</strong></div>
+            <div class="box"><span>기본 체력</span><strong>${fmtNum(pokemon.stats.baseStamina)}</strong></div>
           </div>
         </div>
-      </div>`;
+      </div>
+    `;
   }
 
   function renderMoveSelects(){
     const attacker = getPokemon(state.attacker);
-    if(!attacker){ el.fastMove.innerHTML = `<option value="">공격 포켓몬을 먼저 선택하세요</option>`; el.chargedMove.innerHTML = `<option value="">공격 포켓몬을 먼저 선택하세요</option>`; return; }
+    if(!attacker){
+      el.fastMove.innerHTML = `<option value="">공격 포켓몬을 먼저 선택하세요</option>`;
+      el.chargedMove.innerHTML = `<option value="">공격 포켓몬을 먼저 선택하세요</option>`;
+      return;
+    }
     const mode = el.mode.value;
-    const prevFast = el.fastMove.value, prevCharged = el.chargedMove.value;
-    el.fastMove.innerHTML = `<option value="">노말 기술 선택</option>` + attacker.fastMoves.map(name => { const m = getMove(name, mode, "fast"); const label = m ? `${name} · ${TYPE_KO[m.type] || m.type} · 위력 ${m.power}` : name; return `<option value="${esc(name)}">${esc(label)}</option>`; }).join("");
-    el.chargedMove.innerHTML = `<option value="">스페셜 기술 선택</option>` + attacker.chargedMoves.map(name => { const m = getMove(name, mode, "charged"); const label = m ? `${name} · ${TYPE_KO[m.type] || m.type} · 위력 ${m.power}` : name; return `<option value="${esc(name)}">${esc(label)}</option>`; }).join("");
+    const prevFast = el.fastMove.value;
+    const prevCharged = el.chargedMove.value;
+    el.fastMove.innerHTML = `<option value="">노말 기술 선택</option>` + attacker.fastMoves.map(name => {
+      const m = getMove(name, mode, "fast");
+      const label = m ? `${name} · ${TYPE_KO[m.type] || m.type} · 위력 ${m.power}` : name;
+      return `<option value="${esc(name)}">${esc(label)}</option>`;
+    }).join("");
+    el.chargedMove.innerHTML = `<option value="">스페셜 기술 선택</option>` + attacker.chargedMoves.map(name => {
+      const m = getMove(name, mode, "charged");
+      const label = m ? `${name} · ${TYPE_KO[m.type] || m.type} · 위력 ${m.power}` : name;
+      return `<option value="${esc(name)}">${esc(label)}</option>`;
+    }).join("");
     el.fastMove.value = attacker.fastMoves.includes(prevFast) ? prevFast : (attacker.fastMoves[0] || "");
     el.chargedMove.value = attacker.chargedMoves.includes(prevCharged) ? prevCharged : (attacker.chargedMoves[0] || "");
   }
 
   function renderSummary(){
     const attacker = getPokemon(state.attacker);
-    if(!attacker){ el.summaryPanel.className = "panel empty"; el.summaryPanel.innerHTML = "<p>공격 포켓몬을 선택하면 계산 결과가 표시됩니다.</p>"; return; }
+    if(!attacker){
+      el.summaryPanel.className = "panel empty";
+      el.summaryPanel.innerHTML = "<p>공격 포켓몬을 선택하면 계산 결과가 표시됩니다.</p>";
+      return;
+    }
     const cur = calcStats(attacker, Number(el.currentLevel.value), getAtkIvs());
     const tar = calcStats(attacker, Number(el.targetLevel.value), getAtkIvs());
-    const rAtk = tar.attack / cur.attack, rDef = tar.defense / cur.defense, rHp = tar.hp / cur.hp, rCp = tar.cp / cur.cp;
+    const rAtk = tar.attack / cur.attack;
+    const rDef = tar.defense / cur.defense;
+    const rHp = tar.hp / cur.hp;
+    const rCp = tar.cp / cur.cp;
+
     el.summaryPanel.className = "panel";
     el.summaryPanel.innerHTML = `
       <div class="sub">
@@ -396,95 +514,235 @@
           </div>
         </div>
         <div class="valgrid">
-          <div class="box"><h4>현재 레벨</h4><div style="margin-top:8px"><small>공격력</small><strong>${fmt(cur.attack,3)}</strong></div><div><small>방어력</small><strong>${fmt(cur.defense,3)}</strong></div><div><small>HP</small><strong>${fmtNum(cur.hp)}</strong></div><div><small>CP</small><strong>${fmtNum(cur.cp)}</strong></div></div>
-          <div class="box"><h4>목표 레벨</h4><div style="margin-top:8px"><small>공격력</small><strong>${fmt(tar.attack,3)}</strong></div><div><small>방어력</small><strong>${fmt(tar.defense,3)}</strong></div><div><small>HP</small><strong>${fmtNum(tar.hp)}</strong></div><div><small>CP</small><strong>${fmtNum(tar.cp)}</strong></div></div>
+          <div class="box">
+            <h4>현재 레벨</h4>
+            <div style="margin-top:8px"><small>공격력</small><strong>${fmt(cur.attack,3)}</strong></div>
+            <div><small>방어력</small><strong>${fmt(cur.defense,3)}</strong></div>
+            <div><small>HP</small><strong>${fmtNum(cur.hp)}</strong></div>
+            <div><small>CP</small><strong>${fmtNum(cur.cp)}</strong></div>
+          </div>
+          <div class="box">
+            <h4>목표 레벨</h4>
+            <div style="margin-top:8px"><small>공격력</small><strong>${fmt(tar.attack,3)}</strong></div>
+            <div><small>방어력</small><strong>${fmt(tar.defense,3)}</strong></div>
+            <div><small>HP</small><strong>${fmtNum(tar.hp)}</strong></div>
+            <div><small>CP</small><strong>${fmtNum(tar.cp)}</strong></div>
+          </div>
         </div>
-      </div>`;
+      </div>
+    `;
   }
 
   function renderDamage(){
-    const attacker = getPokemon(state.attacker), defender = getPokemon(state.defender);
-    if(!attacker){ el.damagePanel.className = "panel empty"; el.damagePanel.innerHTML = "<p>공격 포켓몬을 먼저 선택하세요.</p>"; return; }
+    const attacker = getPokemon(state.attacker);
+    const defender = getPokemon(state.defender);
+
+    if(!attacker){
+      el.damagePanel.className = "panel empty";
+      el.damagePanel.innerHTML = "<p>공격 포켓몬을 먼저 선택하세요.</p>";
+      return;
+    }
+
     if(!defender){
       const cur = calcStats(attacker, Number(el.currentLevel.value), getAtkIvs());
       const tar = calcStats(attacker, Number(el.targetLevel.value), getAtkIvs());
       const ratio = tar.attack / cur.attack;
       el.damagePanel.className = "panel";
-      el.damagePanel.innerHTML = `<div class="box"><h3>대상 포켓몬이 없어서 공격력 기준만 계산했습니다.</h3><div class="formula">현재 레벨 대비 목표 레벨의 공격력 배율은 <strong class="${cls(ratio)}">${fmt(ratio,4)}배 (${pct(ratio)})</strong> 입니다.</div></div>`;
+      el.damagePanel.innerHTML = `
+        <div class="box">
+          <h3>대상 포켓몬이 없어서 공격력 기준만 계산했습니다.</h3>
+          <div class="formula">현재 레벨 대비 목표 레벨의 공격력 배율은 <strong class="${cls(ratio)}">${fmt(ratio,4)}배 (${pct(ratio)})</strong> 입니다.</div>
+        </div>
+      `;
       return;
     }
-    const mode = el.mode.value, fast = getMove(el.fastMove.value, mode, "fast"), charged = getMove(el.chargedMove.value, mode, "charged");
-    if(!fast && !charged){ el.damagePanel.className = "panel empty"; el.damagePanel.innerHTML = "<p>기술을 하나 이상 선택하면 단발 데미지 차이를 계산합니다.</p>"; return; }
-    const atkIvs = getAtkIvs(), defIvs = getDefIvs();
+
+    const mode = el.mode.value;
+    const fast = getMove(el.fastMove.value, mode, "fast");
+    const charged = getMove(el.chargedMove.value, mode, "charged");
+
+    if(!fast && !charged){
+      el.damagePanel.className = "panel empty";
+      el.damagePanel.innerHTML = "<p>기술을 하나 이상 선택하면 단발 데미지 차이를 계산합니다.</p>";
+      return;
+    }
+
+    const atkIvs = getAtkIvs();
+    const defIvs = getDefIvs();
     const sections = [];
-    [["노말 기술", fast],["스페셜 기술", charged]].forEach(([label, move]) => {
+
+    [["노말 기술", fast], ["스페셜 기술", charged]].forEach(([label, move]) => {
       if(!move) return;
-      const current = calcDamage({mode, move, attacker, attackerLevel:Number(el.currentLevel.value), defender, defenderLevel:Number(el.defenderLevel.value), atkIvs, defIvs});
-      const target = calcDamage({mode, move, attacker, attackerLevel:Number(el.targetLevel.value), defender, defenderLevel:Number(el.defenderLevel.value), atkIvs, defIvs});
+      const current = calcDamage({
+        mode, move, attacker, attackerLevel:Number(el.currentLevel.value),
+        defender, defenderLevel:Number(el.defenderLevel.value), atkIvs, defIvs
+      });
+      const target = calcDamage({
+        mode, move, attacker, attackerLevel:Number(el.targetLevel.value),
+        defender, defenderLevel:Number(el.defenderLevel.value), atkIvs, defIvs
+      });
       const ratio = target.damage / current.damage;
-      sections.push(`<div class="box"><h3>${label}: ${esc(move.name)}</h3><div class="sumgrid" style="margin-top:12px"><div class="box"><span>현재 레벨 데미지</span><strong>${fmtNum(current.damage)}</strong></div><div class="box"><span>목표 레벨 데미지</span><strong>${fmtNum(target.damage)}</strong></div><div class="box"><span>데미지 차이</span><strong class="${cls(ratio)}">${pct(ratio)}</strong></div><div class="box"><span>배율</span><strong class="${cls(ratio)}">${fmt(ratio,4)}배</strong></div></div><div class="formula"><div>위력: <strong>${move.power}</strong> · 타입: <strong>${TYPE_KO[move.type] || move.type}</strong> · 대상 타입: <strong>${defender.types.map(t=>TYPE_KO[t] || t).join(" / ")}</strong></div><div>STAB: <strong>${current.stab > 1 ? "예 (1.2)" : "아니오"}</strong> · 상성 배율: <strong>${fmt(current.eff,3)}</strong></div><div>PvE 날씨: <strong>${mode === "pve" ? `${current.weather > 1 ? `${WEATHER_KO[el.weather.value] || el.weather.value} 적용` : "없음"} (${fmt(current.weather,2)})` : "미적용"}</strong> · PvE 프렌드: <strong>${mode === "pve" ? fmt(current.friend,2) : "미적용"}</strong></div><div>계산에 사용한 대상 방어력: <strong>${fmt(current.d.defense,3)}</strong> (대상 레벨 ${el.defenderLevel.value})</div></div></div>`);
+
+      sections.push(`
+        <div class="box">
+          <h3>${label}: ${esc(move.name)}</h3>
+          <div class="sumgrid" style="margin-top:12px">
+            <div class="box"><span>현재 레벨 데미지</span><strong>${fmtNum(current.damage)}</strong></div>
+            <div class="box"><span>목표 레벨 데미지</span><strong>${fmtNum(target.damage)}</strong></div>
+            <div class="box"><span>데미지 차이</span><strong class="${cls(ratio)}">${pct(ratio)}</strong></div>
+            <div class="box"><span>배율</span><strong class="${cls(ratio)}">${fmt(ratio,4)}배</strong></div>
+          </div>
+          <div class="formula">
+            <div>위력: <strong>${move.power}</strong> · 타입: <strong>${TYPE_KO[move.type] || move.type}</strong> · 대상 타입: <strong>${defender.types.map(t=>TYPE_KO[t] || t).join(" / ")}</strong></div>
+            <div>STAB: <strong>${current.stab > 1 ? "예 (1.2)" : "아니오"}</strong> · 상성 배율: <strong>${fmt(current.eff,3)}</strong></div>
+            <div>PvE 날씨: <strong>${mode === "pve" ? `${current.weather > 1 ? `${WEATHER_KO[el.weather.value] || el.weather.value} 적용` : "없음"} (${fmt(current.weather,2)})` : "미적용"}</strong> · PvE 프렌드: <strong>${mode === "pve" ? fmt(current.friend,2) : "미적용"}</strong></div>
+            <div>계산에 사용한 대상 방어력: <strong>${fmt(current.d.defense,3)}</strong> (대상 레벨 ${el.defenderLevel.value})</div>
+          </div>
+        </div>
+      `);
     });
+
     el.damagePanel.className = "panel";
     el.damagePanel.innerHTML = `<div class="sub">${sections.join("")}</div>`;
   }
 
   function renderTable(){
     const attacker = getPokemon(state.attacker);
-    if(!attacker){ el.levelBody.innerHTML = `<tr><td colspan="6" class="table-empty">공격 포켓몬을 선택하면 표가 채워집니다.</td></tr>`; return; }
+    if(!attacker){
+      el.levelBody.innerHTML = `<tr><td colspan="6" class="table-empty">공격 포켓몬을 선택하면 표가 채워집니다.</td></tr>`;
+      return;
+    }
     const atkIvs = getAtkIvs();
-    el.levelBody.innerHTML = LEVELS.map(level => { const s = calcStats(attacker, level, atkIvs); return `<tr><td>${level}</td><td>${fmt(s.cpm,9)}</td><td>${fmt(s.attack,3)}</td><td>${fmt(s.defense,3)}</td><td>${fmtNum(s.hp)}</td><td>${fmtNum(s.cp)}</td></tr>`; }).join("");
+    el.levelBody.innerHTML = LEVELS.map(level => {
+      const s = calcStats(attacker, level, atkIvs);
+      return `<tr><td>${level}</td><td>${fmt(s.cpm,9)}</td><td>${fmt(s.attack,3)}</td><td>${fmt(s.defense,3)}</td><td>${fmtNum(s.hp)}</td><td>${fmtNum(s.cp)}</td></tr>`;
+    }).join("");
   }
 
   function refresh(){
-    const attacker = getPokemon(state.attacker), defender = getPokemon(state.defender);
-    el.attackerCard.innerHTML = attacker ? cardHTML(attacker, "") : "<p>공격 포켓몬을 선택하세요.</p>";
-    el.attackerCard.className = attacker ? "pk-card" : "pk-card empty";
-    el.defenderCard.innerHTML = defender ? cardHTML(defender, "") : "<p>대상 포켓몬을 선택하면 실제 기술 데미지를 계산합니다.</p>";
-    el.defenderCard.className = defender ? "pk-card" : "pk-card empty";
-    renderMoveSelects(); renderSummary(); renderDamage(); renderTable();
+    const attacker = getPokemon(state.attacker);
+    const defender = getPokemon(state.defender);
+
+    if(attacker){
+      el.attackerCard.className = "pk-card";
+      el.attackerCard.innerHTML = cardHTML(attacker);
+    } else {
+      el.attackerCard.className = "pk-card empty";
+      el.attackerCard.innerHTML = "<p>공격 포켓몬을 선택하세요.</p>";
+    }
+
+    if(defender){
+      el.defenderCard.className = "pk-card";
+      el.defenderCard.innerHTML = cardHTML(defender);
+    } else {
+      el.defenderCard.className = "pk-card empty";
+      el.defenderCard.innerHTML = "<p>대상 포켓몬을 선택하면 실제 기술 데미지를 계산합니다.</p>";
+    }
+
+    renderMoveSelects();
+    renderSummary();
+    renderDamage();
+    renderTable();
   }
 
   function setupSearch(input, dropdown, role){
     let activeIndex = 0;
+
     const selectPokemon = (p) => {
-      if(role === "attacker"){ state.attacker = p.id; el.attackerSearch.value = p.koName; }
-      else { state.defender = p.id; el.defenderSearch.value = p.koName; }
-      closeDropdown(dropdown); refresh();
+      if(role === "attacker"){
+        state.attacker = p.id;
+        el.attackerSearch.value = p.koName;
+      } else {
+        state.defender = p.id;
+        el.defenderSearch.value = p.koName;
+      }
+      closeDropdown(dropdown);
+      refresh();
     };
-    const draw = () => { const items = resultList(input.value); activeIndex = 0; drawDropdown(dropdown, items, selectPokemon, activeIndex); };
+
+    const draw = () => {
+      const items = resultList(input.value);
+      activeIndex = 0;
+      drawDropdown(dropdown, items, selectPokemon, activeIndex);
+    };
+
     input.addEventListener("input", draw);
     input.addEventListener("compositionend", draw);
     input.addEventListener("focus", draw);
+
     input.addEventListener("keydown", (e) => {
       const items = resultList(input.value);
       if(!items.length) return;
-      if(e.key === "ArrowDown"){ e.preventDefault(); activeIndex = Math.min(activeIndex + 1, items.length - 1); drawDropdown(dropdown, items, selectPokemon, activeIndex); }
-      else if(e.key === "ArrowUp"){ e.preventDefault(); activeIndex = Math.max(activeIndex - 1, 0); drawDropdown(dropdown, items, selectPokemon, activeIndex); }
-      else if(e.key === "Enter"){ e.preventDefault(); selectPokemon(items[activeIndex] || items[0]); }
-      else if(e.key === "Escape"){ closeDropdown(dropdown); }
+      if(e.key === "ArrowDown"){
+        e.preventDefault();
+        activeIndex = Math.min(activeIndex + 1, items.length - 1);
+        drawDropdown(dropdown, items, selectPokemon, activeIndex);
+      } else if(e.key === "ArrowUp"){
+        e.preventDefault();
+        activeIndex = Math.max(activeIndex - 1, 0);
+        drawDropdown(dropdown, items, selectPokemon, activeIndex);
+      } else if(e.key === "Enter"){
+        e.preventDefault();
+        selectPokemon(items[activeIndex] || items[0]);
+      } else if(e.key === "Escape"){
+        closeDropdown(dropdown);
+      }
     });
-    document.addEventListener("click", e => { if(!dropdown.contains(e.target) && !input.contains(e.target)) closeDropdown(dropdown); });
+
+    document.addEventListener("click", e => {
+      if(!dropdown.contains(e.target) && !input.contains(e.target)) closeDropdown(dropdown);
+    });
   }
 
-  async function fetchJson(url){ const res = await fetch(url, {cache:"no-store"}); if(!res.ok) throw new Error(`${url} (${res.status})`); return res.json(); }
-  async function fetchText(url){ const res = await fetch(url, {cache:"no-store"}); if(!res.ok) throw new Error(`${url} (${res.status})`); return res.text(); }
+  async function fetchJson(url){
+    const res = await fetch(url, {cache:"no-store"});
+    if(!res.ok) throw new Error(`${url} (${res.status})`);
+    return res.json();
+  }
+
+  async function fetchText(url){
+    const res = await fetch(url, {cache:"no-store"});
+    if(!res.ok) throw new Error(`${url} (${res.status})`);
+    return res.text();
+  }
 
   async function load(){
     setLoading("데이터 불러오는 중…","포켓몬고 데이터와 이름 인덱스를 가져오고 있습니다.");
+
     const core = await Promise.allSettled([
-      fetchJson(API.released), fetchJson(API.names), fetchJson(API.stats), fetchJson(API.types), fetchJson(API.moves),
-      fetchJson(API.fast), fetchJson(API.charged), fetchJson(API.pvpFast), fetchJson(API.pvpCharged), fetchJson(API.effect), fetchJson(API.weather)
+      fetchJson(API.stats),
+      fetchJson(API.types),
+      fetchJson(API.moves),
+      fetchJson(API.fast),
+      fetchJson(API.charged),
+      fetchJson(API.pvpFast),
+      fetchJson(API.pvpCharged),
+      fetchJson(API.effect),
+      fetchJson(API.weather)
     ]);
 
-    const [releasedR, namesR, statsR, typesR, poolsR, fastR, chargedR, pvpFastR, pvpChargedR, effectR, weatherR] = core;
-    const failed = core.map((r,i)=>({i, ok:r.status==="fulfilled", reason:r.status==="rejected" ? r.reason?.message || String(r.reason) : ""})).filter(x=>!x.ok);
-    if(failed.length) throw new Error(`PoGoAPI 로딩 실패 ${failed.length}건`);
+    const [statsR, typesR, poolsR, fastR, chargedR, pvpFastR, pvpChargedR, effectR, weatherR] = core;
+    const failed = core
+      .map((r,i)=>({i, ok:r.status==="fulfilled", reason:r.status==="rejected" ? (r.reason?.message || String(r.reason)) : ""}))
+      .filter(x=>!x.ok);
 
-    const released = releasedR.value, pogoNames = namesR.value, stats = statsR.value, types = typesR.value, pools = poolsR.value, fast = fastR.value, charged = chargedR.value, pvpFast = pvpFastR.value, pvpCharged = pvpChargedR.value, effect = effectR.value, weather = weatherR.value;
+    if(failed.length){
+      throw new Error(failed.map(x => x.reason).join(" | "));
+    }
 
-    state.stats = indexById(stats, "id");
-    state.types = groupById(types, "pokemon_id");
-    state.pools = groupById(pools, "pokemon_id");
+    const stats = statsR.value;
+    const types = typesR.value;
+    const pools = poolsR.value;
+    const fast = fastR.value;
+    const charged = chargedR.value;
+    const pvpFast = pvpFastR.value;
+    const pvpCharged = pvpChargedR.value;
+    const effect = effectR.value;
+    const weather = weatherR.value;
+
+    state.statsById = groupBy(stats, "id");
+    state.typesById = groupBy(types, "pokemon_id");
+    state.poolsById = groupBy(pools, "pokemon_id");
     state.effect = effect;
     state.weather = weather;
     state.moveMap.pveFast = new Map(fast.map(m => [m.name, m]));
@@ -494,57 +752,69 @@
 
     setLoading("이름 인덱스 구성 중…","한국어 이름을 붙이는 중입니다.", `종족값 ${stats.length}건 · 기술풀 ${pools.length}건`);
 
-    let species = [], speciesNames = [], koreanOk = false;
+    const koById = new Map();
     try {
-      const [speciesText, speciesNamesText] = await Promise.all([fetchText(API.speciesCsv), fetchText(API.speciesNamesCsv)]);
-      species = parseCsv(speciesText);
-      speciesNames = parseCsv(speciesNamesText);
-      koreanOk = true;
+      const speciesNamesText = await fetchText(API.speciesNamesCsv);
+      const speciesNames = parseCsv(speciesNamesText);
+      speciesNames.forEach(r => {
+        if(String(r.local_language_id) !== "3") return;
+        const id = Number(r.pokemon_species_id);
+        if(Number.isFinite(id) && r.name) koById.set(id, r.name);
+      });
     } catch (err) {
       console.warn("한국어 이름 CSV 로딩 실패", err);
     }
 
-    const enById = new Map();
-    Object.keys(pogoNames || {}).forEach(key => {
-      const row = pogoNames[key];
-      const id = Number(row?.id ?? key);
-      if(Number.isFinite(id) && row?.name) enById.set(id, row.name);
+    const ids = [...state.statsById.keys()].sort((a,b)=>a-b);
+    state.search = ids.map(id => {
+      const base = pickNormal(state.statsById.get(id));
+      const en = base?.name || `Pokemon ${id}`;
+      const ko = koById.get(id) || titleCase(en);
+      return {
+        id,
+        enName: en,
+        pogoName: en,
+        koName: ko
+      };
     });
-    species.forEach(r => { const id = Number(r.id); if(Number.isFinite(id) && !enById.has(id) && r.identifier) enById.set(id, r.identifier); });
 
-    const koById = new Map();
-    speciesNames.forEach(r => { if(String(r.local_language_id) !== "3") return; const id = Number(r.pokemon_species_id); if(Number.isFinite(id) && r.name) koById.set(id, r.name); });
+    if(!state.search.length){
+      throw new Error("검색 인덱스를 만들지 못했습니다.");
+    }
 
-    const releasedIds = Object.keys(released).map(Number).filter(Number.isFinite);
-    state.search = releasedIds.filter(id => state.stats.has(id) && enById.has(id)).map(id => ({
-      id,
-      enName: enById.get(id),
-      pogoName: released[String(id)]?.name || released[id]?.name || enById.get(id),
-      koName: koById.get(id) || titleCase(enById.get(id))
-    })).sort((a,b)=>a.id-b.id);
+    state.attacker =
+      state.search.find(p => norm(p.koName) === norm("메타그로스") || norm(p.enName) === "metagross")?.id ||
+      state.search[0].id;
 
-    if(!state.search.length) throw new Error("검색 인덱스를 만들지 못했습니다.");
-
-    state.attacker = state.search.find(p => norm(p.koName) === norm("메타그로스") || norm(p.enName) === "metagross")?.id || state.search[0].id;
-    state.defender = state.search.find(p => norm(p.koName) === norm("해피너스") || norm(p.enName) === "blissey")?.id || state.search[1]?.id || state.search[0].id;
+    state.defender =
+      state.search.find(p => norm(p.koName) === norm("해피너스") || norm(p.enName) === "blissey")?.id ||
+      state.search[1]?.id ||
+      state.search[0].id;
 
     el.attackerSearch.value = getPokemon(state.attacker)?.koName || "";
     el.defenderSearch.value = getPokemon(state.defender)?.koName || "";
 
-    setLoading("로드 완료","검색창에 바로 입력할 수 있습니다.", `검색 인덱스 ${state.search.length}건 · 한국어 이름 ${koreanOk ? "적용" : "실패(영문 fallback)"}`);
-    setTimeout(() => el.loadingCard.classList.add("hide"), 600);
+    setLoading("로드 완료","검색창에 바로 입력할 수 있습니다.", `검색 인덱스 ${state.search.length}건`);
+    setTimeout(() => el.loadingCard.classList.add("hide"), 500);
     refresh();
   }
 
   fillLevelOptions();
   setupSearch(el.attackerSearch, el.attackerDropdown, "attacker");
   setupSearch(el.defenderSearch, el.defenderDropdown, "defender");
-  [el.mode, el.currentLevel, el.targetLevel, el.defenderLevel, el.friendBoost, el.weather, el.atkIvAtk, el.atkIvDef, el.atkIvSta, el.defIvDef, el.defIvSta, el.fastMove, el.chargedMove].forEach(node => { node.addEventListener("change", refresh); node.addEventListener("input", refresh); });
+
+  [
+    el.mode, el.currentLevel, el.targetLevel, el.defenderLevel, el.friendBoost, el.weather,
+    el.atkIvAtk, el.atkIvDef, el.atkIvSta, el.defIvDef, el.defIvSta, el.fastMove, el.chargedMove
+  ].forEach(node => {
+    node.addEventListener("change", refresh);
+    node.addEventListener("input", refresh);
+  });
 
   load().catch(err => {
     console.error(err);
     el.loadingCard.classList.remove("hide");
-    setLoading("데이터 로딩 실패", "외부 API 요청이 실패했습니다. GitHub Pages에서 다시 열거나 잠시 후 새로고침해 보세요.", esc(err.message));
+    setLoading("데이터 로딩 실패", "브라우저 콘솔(F12)에서도 에러를 확인해 보세요.", esc(err.message));
     el.summaryPanel.className = "panel empty";
     el.summaryPanel.innerHTML = `<div class="error-box"><p>API 로딩 실패: ${esc(err.message)}</p></div>`;
   });
