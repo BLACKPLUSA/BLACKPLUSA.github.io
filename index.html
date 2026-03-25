@@ -1,1045 +1,812 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PoGO Damage Calc</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<style>
-:root {
-  --bg: #090b0e;
-  --surface: #111418;
-  --surface2: #1a1f27;
-  --surface3: #222830;
-  --border: rgba(255,255,255,0.07);
-  --border2: rgba(255,255,255,0.12);
-  --accent: #f6c90e;
-  --accent-dim: rgba(246,201,14,0.12);
-  --accent2: #38bdf8;
-  --accent3: #a78bfa;
-  --text: #dde3ec;
-  --text2: #8b949e;
-  --text3: #4b5563;
-  --success: #34d399;
-  --warn: #fb923c;
-  --danger: #f87171;
-  --mono: 'DM Mono', monospace;
-  --sans: 'Outfit', sans-serif;
-  --radius: 12px;
-  --radius-sm: 7px;
-}
-
-/* Type colors */
-.t-normal    { --tc:#A8A878; } .t-fire      { --tc:#F08030; }
-.t-water     { --tc:#6890F0; } .t-electric  { --tc:#F8D030; }
-.t-grass     { --tc:#78C850; } .t-ice       { --tc:#98D8D8; }
-.t-fighting  { --tc:#C03028; } .t-poison    { --tc:#A040A0; }
-.t-ground    { --tc:#E0C068; } .t-flying    { --tc:#A890F0; }
-.t-psychic   { --tc:#F85888; } .t-bug       { --tc:#A8B820; }
-.t-rock      { --tc:#B8A038; } .t-ghost     { --tc:#705898; }
-.t-dragon    { --tc:#7038F8; } .t-dark      { --tc:#705848; }
-.t-steel     { --tc:#B8B8D0; } .t-fairy     { --tc:#EE99AC; }
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--sans);
-  font-size: 14px;
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* Scanline overlay */
-body::before {
-  content: '';
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background:
-    repeating-linear-gradient(0deg,
-      transparent,
-      transparent 2px,
-      rgba(0,0,0,0.03) 2px,
-      rgba(0,0,0,0.03) 4px
-    );
-}
-
-/* Grid dots */
-body::after {
-  content: '';
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background-image: radial-gradient(rgba(246,201,14,0.06) 1px, transparent 1px);
-  background-size: 28px 28px;
-}
-
-.wrap {
-  position: relative; z-index: 1;
-  max-width: 1100px; margin: 0 auto;
-  padding: 0 16px 100px;
-}
-
-/* ── Header ── */
-header {
-  display: flex; align-items: center; gap: 18px;
-  padding: 28px 0 24px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 32px;
-}
-.pokeball {
-  width: 44px; height: 44px; flex-shrink: 0;
-  border-radius: 50%; overflow: hidden;
-  position: relative;
-  border: 2.5px solid var(--accent);
-  box-shadow: 0 0 18px rgba(246,201,14,0.35);
-  animation: pulse 3s ease-in-out infinite;
-}
-.pokeball::before { content:''; position:absolute; inset:0; background: linear-gradient(180deg,#e53e3e 50%,#fff 50%); }
-.pokeball::after  { content:''; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:11px; height:11px; background:#fff; border-radius:50%; border:2.5px solid #222; z-index:2; }
-.pokeball-stripe { position:absolute; left:0; right:0; top:calc(50% - 1.5px); height:3px; background:#222; z-index:1; }
-
-@keyframes pulse {
-  0%,100% { box-shadow: 0 0 18px rgba(246,201,14,0.3); }
-  50%      { box-shadow: 0 0 30px rgba(246,201,14,0.6); }
-}
-
-header h1 {
-  font-family: var(--mono); font-size: 22px; font-weight: 500;
-  color: var(--accent); letter-spacing: -0.02em;
-}
-header h1 span { color: var(--text2); font-size: 13px; font-weight: 400; display: block; margin-top: 2px; font-family: var(--sans); letter-spacing: 0; }
-
-.api-badges { display:flex; gap:6px; margin-left:auto; flex-wrap:wrap; }
-.badge {
-  font-size: 10px; font-family: var(--mono);
-  padding: 3px 8px; border-radius: 4px;
-  border: 1px solid; opacity: 0.7;
-}
-.badge-green { border-color: var(--success); color: var(--success); }
-.badge-blue  { border-color: var(--accent2); color: var(--accent2); }
-
-/* ── Search ── */
-.search-section { margin-bottom: 28px; }
-.search-label { font-size: 11px; font-family: var(--mono); color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
-.search-row { display: flex; gap: 10px; }
-.search-wrap { position: relative; flex: 1; max-width: 440px; }
-.search-wrap input {
-  width: 100%;
-  background: var(--surface); border: 1px solid var(--border2);
-  border-radius: var(--radius); color: var(--text);
-  font-family: var(--sans); font-size: 14px;
-  padding: 12px 16px 12px 42px;
-  outline: none; transition: border-color 0.2s, box-shadow 0.2s;
-}
-.search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(246,201,14,0.12); }
-.search-wrap input::placeholder { color: var(--text3); }
-.search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; pointer-events: none; }
-.dropdown {
-  position: absolute; top: calc(100% + 6px); left: 0; right: 0;
-  background: var(--surface2); border: 1px solid var(--border2);
-  border-radius: var(--radius); overflow: hidden; z-index: 100;
-  max-height: 260px; overflow-y: auto;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-  display: none;
-}
-.dropdown.open { display: block; }
-.dd-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 9px 14px; cursor: pointer; transition: background 0.15s;
-}
-.dd-item:hover { background: var(--surface3); }
-.dd-img { width: 36px; height: 36px; object-fit: contain; }
-.dd-id  { font-family: var(--mono); font-size: 11px; color: var(--text3); min-width: 36px; }
-.dd-name { font-size: 14px; }
-.dd-types { display: flex; gap: 4px; margin-left: auto; }
-.type-pill {
-  font-size: 10px; padding: 2px 7px; border-radius: 99px;
-  background: rgba(255,255,255,0.08); color: var(--text2);
-  border: 1px solid rgba(255,255,255,0.1);
-}
-
-/* ── Main Grid ── */
-.main-grid {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 20px;
-  align-items: start;
-}
-@media (max-width: 780px) { .main-grid { grid-template-columns: 1fr; } }
-
-/* ── Pokemon Card ── */
-.poke-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-  position: sticky; top: 16px;
-}
-.poke-hero {
-  position: relative;
-  background: linear-gradient(135deg, var(--surface2), var(--surface3));
-  padding: 32px 20px 20px;
-  display: flex; flex-direction: column; align-items: center;
-  border-bottom: 1px solid var(--border);
-  min-height: 200px;
-}
-.poke-hero-bg {
-  position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(ellipse 80% 60% at 50% 80%, rgba(246,201,14,0.06), transparent);
-}
-.poke-id {
-  position: absolute; top: 14px; left: 16px;
-  font-family: var(--mono); font-size: 12px; color: var(--text3);
-}
-.poke-sprite {
-  width: 120px; height: 120px; object-fit: contain;
-  image-rendering: pixelated;
-  filter: drop-shadow(0 8px 20px rgba(0,0,0,0.5));
-  transition: transform 0.3s ease;
-}
-.poke-sprite:hover { transform: scale(1.08) translateY(-4px); }
-.poke-sprite-placeholder {
-  width: 120px; height: 120px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 60px; opacity: 0.3;
-}
-.poke-name-en { font-family: var(--mono); font-size: 12px; color: var(--text3); margin-top: 10px; }
-.poke-name    { font-size: 22px; font-weight: 600; margin-top: 2px; }
-.poke-types { display: flex; gap: 6px; margin-top: 10px; }
-.poke-type-badge {
-  padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 500;
-  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
-  color: var(--tc, var(--text));
-}
-
-.poke-stats { padding: 16px; }
-.stat-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.stat-row:last-child { margin-bottom: 0; }
-.stat-label { font-size: 11px; font-family: var(--mono); color: var(--text3); width: 60px; flex-shrink: 0; }
-.stat-bar-wrap { flex: 1; height: 6px; background: var(--surface3); border-radius: 99px; overflow: hidden; }
-.stat-bar { height: 100%; border-radius: 99px; transition: width 0.5s ease; }
-.stat-bar-atk { background: linear-gradient(90deg, var(--warn), #fbbf24); }
-.stat-bar-def { background: linear-gradient(90deg, var(--accent2), #818cf8); }
-.stat-bar-sta { background: linear-gradient(90deg, var(--success), #10b981); }
-.stat-val { font-family: var(--mono); font-size: 13px; font-weight: 500; width: 32px; text-align: right; }
-
-/* ── Right Column ── */
-.right-col { display: flex; flex-direction: column; gap: 20px; }
-
-/* ── Panel ── */
-.panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-}
-.panel-header {
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: 8px;
-}
-.panel-title { font-size: 12px; font-family: var(--mono); color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; }
-.panel-body { padding: 18px; }
-
-/* ── Controls ── */
-.controls-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  margin-bottom: 18px;
-}
-@media (max-width: 520px) { .controls-grid { grid-template-columns: 1fr 1fr; } }
-
-.ctrl-group label {
-  display: block; font-size: 11px; font-family: var(--mono);
-  color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em;
-  margin-bottom: 6px;
-}
-.ctrl-group select, .ctrl-group input[type=number] {
-  width: 100%;
-  background: var(--surface2); border: 1px solid var(--border2);
-  border-radius: var(--radius-sm); color: var(--text);
-  font-family: var(--sans); font-size: 13px;
-  padding: 9px 10px; outline: none;
-  transition: border-color 0.2s;
-  -webkit-appearance: none;
-}
-.ctrl-group select { cursor: pointer; }
-.ctrl-group select:focus, .ctrl-group input[type=number]:focus {
-  border-color: var(--accent);
-}
-
-/* IV buttons */
-.iv-buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
-.iv-btn {
-  padding: 7px 4px; font-size: 12px; font-family: var(--mono);
-  background: var(--surface2); border: 1px solid var(--border2);
-  border-radius: var(--radius-sm); color: var(--text2);
-  cursor: pointer; text-align: center; transition: all 0.15s;
-}
-.iv-btn:hover { border-color: var(--accent); color: var(--accent); }
-.iv-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
-
-/* Level sliders */
-.level-compare {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
-  margin-top: 14px;
-}
-.level-block label { font-size: 11px; font-family: var(--mono); color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 8px; }
-.level-display {
-  font-size: 28px; font-weight: 700; font-family: var(--mono);
-  color: var(--text); line-height: 1;
-  margin-bottom: 8px;
-}
-.level-display.target { color: var(--accent); }
-input[type=range] {
-  -webkit-appearance: none; width: 100%; height: 4px;
-  background: var(--surface3); border-radius: 99px; outline: none;
-  cursor: pointer;
-}
-input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none; width: 16px; height: 16px;
-  background: var(--accent); border-radius: 50%;
-  border: 2px solid var(--bg);
-  box-shadow: 0 0 6px rgba(246,201,14,0.4);
-}
-input[type=range].target-range::-webkit-slider-thumb { background: var(--accent); }
-
-/* ── Uplift Banner ── */
-.uplift-banner {
-  background: linear-gradient(135deg, rgba(246,201,14,0.08), rgba(246,201,14,0.04));
-  border: 1px solid rgba(246,201,14,0.2);
-  border-radius: var(--radius-sm);
-  padding: 14px 18px;
-  display: flex; align-items: center; gap: 16px;
-  margin-top: 18px;
-}
-.uplift-pct { font-size: 36px; font-weight: 700; font-family: var(--mono); color: var(--accent); line-height: 1; }
-.uplift-pct span { font-size: 18px; }
-.uplift-detail { font-size: 13px; color: var(--text2); line-height: 1.6; }
-.uplift-detail strong { color: var(--text); font-weight: 500; }
-
-/* ── Move Table ── */
-.move-table { width: 100%; border-collapse: collapse; }
-.move-table th {
-  font-size: 10px; font-family: var(--mono); color: var(--text3);
-  text-transform: uppercase; letter-spacing: 0.06em;
-  text-align: left; padding: 8px 12px;
-  border-bottom: 1px solid var(--border);
-  font-weight: 400;
-}
-.move-table th:not(:first-child) { text-align: right; }
-.move-table td {
-  padding: 11px 12px; border-bottom: 1px solid var(--border);
-  font-size: 13px; vertical-align: middle;
-}
-.move-table tr:last-child td { border-bottom: none; }
-.move-table tr:hover td { background: rgba(255,255,255,0.02); }
-.move-table td:not(:first-child) { text-align: right; font-family: var(--mono); }
-.move-name { font-weight: 500; }
-.move-kind {
-  font-size: 9px; padding: 2px 6px; border-radius: 4px;
-  margin-left: 6px; vertical-align: middle;
-  font-family: var(--mono); text-transform: uppercase;
-}
-.move-fast   { background: rgba(56,189,248,0.1); color: var(--accent2); border:1px solid rgba(56,189,248,0.2); }
-.move-charge { background: rgba(167,139,250,0.1); color: var(--accent3); border:1px solid rgba(167,139,250,0.2); }
-.dmg-40 { color: var(--text2); }
-.dmg-50 { color: var(--accent); font-weight: 500; }
-.dmg-diff {
-  font-size: 11px; padding: 2px 6px; border-radius: 4px;
-  background: rgba(52,211,153,0.1); color: var(--success);
-  border: 1px solid rgba(52,211,153,0.2);
-  display: inline-block;
-}
-.dmg-same { opacity: 0.4; }
-
-/* ── CPM Table ── */
-.cpm-panel { }
-.cpm-scroll { max-height: 360px; overflow-y: auto; }
-.cpm-scroll::-webkit-scrollbar { width: 4px; }
-.cpm-scroll::-webkit-scrollbar-track { background: transparent; }
-.cpm-scroll::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 99px; }
-
-.cpm-table { width: 100%; border-collapse: collapse; }
-.cpm-table th {
-  font-size: 10px; font-family: var(--mono); color: var(--text3); letter-spacing: 0.06em;
-  text-transform: uppercase; padding: 8px 12px; border-bottom: 1px solid var(--border);
-  font-weight: 400; text-align: left; position: sticky; top: 0; background: var(--surface);
-}
-.cpm-table th:not(:first-child) { text-align: right; }
-.cpm-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 12px; }
-.cpm-table td:not(:first-child) { text-align: right; font-family: var(--mono); }
-.cpm-table tr:last-child td { border-bottom: none; }
-.cpm-row-cur td { background: rgba(56,189,248,0.06); color: var(--accent2); font-weight: 500; }
-.cpm-row-tgt td { background: rgba(246,201,14,0.06); color: var(--accent); font-weight: 500; }
-.cpm-row-cur.cpm-row-tgt td { background: rgba(167,139,250,0.1); color: var(--accent3); }
-
-/* ── Formula Box ── */
-.formula-box {
-  background: var(--surface2); border: 1px solid var(--border);
-  border-left: 3px solid var(--accent); border-radius: var(--radius-sm);
-  padding: 14px 16px; font-family: var(--mono); font-size: 12px;
-  color: var(--text2); line-height: 2;
-}
-.formula-box .hi { color: var(--accent); font-weight: 500; }
-.formula-box .hi2 { color: var(--accent2); }
-
-/* ── Loading / Error ── */
-.loading-state {
-  display: flex; align-items: center; gap: 12px;
-  padding: 60px 20px; color: var(--text3);
-  font-family: var(--mono); font-size: 13px;
-}
-.spinner {
-  width: 20px; height: 20px; flex-shrink: 0;
-  border: 2px solid var(--surface3);
-  border-top-color: var(--accent);
-  border-radius: 50%; animation: spin 0.7s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ── Misc ── */
-.text-muted { color: var(--text3); font-family: var(--mono); font-size: 11px; line-height: 1.7; margin-top: 10px; }
-.section-spacer { height: 8px; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pokémon GO 딜 차이 계산기</title>
+  <style>
+    :root{
+      --bg:#0b1220;--panel:#111827;--panel2:#0f172a;--line:#243041;
+      --text:#e5eefc;--muted:#9db0cb;--accent:#38bdf8;--good:#86efac;--bad:#fda4af;--warn:#fcd34d;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;background:linear-gradient(180deg,#08101d,#0b1220);color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;
+    }
+    .wrap{width:min(1280px,calc(100% - 24px));margin:20px auto 32px}
+    .card{background:rgba(15,23,42,.88);border:1px solid rgba(125,211,252,.14);border-radius:18px;padding:16px;margin-bottom:16px}
+    .hero{display:grid;grid-template-columns:1.35fr 1fr;gap:16px}
+    .hero p,.muted,.empty,.note li{color:var(--muted)}
+    h1,h2,h3,h4,p{margin:0}
+    .eyebrow{color:#7dd3fc;font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-size:.82rem;margin-bottom:8px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .controls{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+    .controls.small{grid-template-columns:repeat(5,minmax(0,1fr))}
+    .controls.moves{grid-template-columns:repeat(2,minmax(0,1fr))}
+    label{display:block;margin:0 0 6px;color:var(--muted);font-size:.92rem}
+    input,select{
+      width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line);
+      background:#09111e;color:var(--text);font-size:.96rem
+    }
+    input:focus,select:focus{outline:2px solid rgba(56,189,248,.32);border-color:var(--accent)}
+    .search{position:relative}
+    .dropdown{
+      position:absolute;top:calc(100% + 8px);left:0;right:0;display:none;z-index:30;max-height:280px;overflow:auto;
+      border-radius:14px;background:rgba(8,16,29,.98);border:1px solid rgba(125,211,252,.14)
+    }
+    .dropdown.open{display:block}
+    .item{padding:11px 12px;border-bottom:1px solid rgba(157,176,203,.08);cursor:pointer}
+    .item:last-child{border-bottom:none}
+    .item:hover{background:rgba(56,189,248,.1)}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .chip,.badge{
+      display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;
+      border:1px solid rgba(125,211,252,.14);background:rgba(125,211,252,.08);font-size:.86rem
+    }
+    .pk-card{margin-top:14px;min-height:140px}
+    .pk-card.empty,.panel.empty,.table-empty{
+      display:grid;place-items:center;text-align:center;padding:18px;border:1px dashed rgba(157,176,203,.22);
+      border-radius:14px;color:var(--muted)
+    }
+    .pk-inner{display:grid;grid-template-columns:120px 1fr;gap:16px;align-items:center}
+    .art{
+      display:grid;place-items:center;min-height:120px;padding:10px;border-radius:16px;
+      background:radial-gradient(circle at 30% 20%,rgba(125,211,252,.18),transparent 55%), rgba(255,255,255,.03);
+      border:1px solid rgba(125,211,252,.12)
+    }
+    .art img{max-width:96px;width:100%;height:auto;object-fit:contain}
+    .stats3,.sumgrid,.valgrid{display:grid;gap:10px}
+    .stats3{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:12px}
+    .sumgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .valgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .box{
+      border:1px solid rgba(125,211,252,.12);background:rgba(255,255,255,.025);border-radius:14px;padding:12px
+    }
+    .box span,.box small{display:block;color:var(--muted);font-size:.84rem}
+    .box strong{display:block;font-size:1.12rem;margin-top:4px}
+    .panel{min-height:220px}
+    .sub{display:grid;gap:12px}
+    .good{color:var(--good)}.bad{color:var(--bad)}.warn{color:var(--warn)}
+    .formula{margin-top:12px;padding:12px;border-radius:14px;background:rgba(8,16,29,.55);border:1px solid rgba(157,176,203,.08);color:var(--muted)}
+    .table-wrap{overflow:auto;border-radius:16px;border:1px solid rgba(125,211,252,.12)}
+    table{width:100%;min-width:760px;border-collapse:collapse}
+    th,td{padding:11px 12px;border-bottom:1px solid rgba(157,176,203,.08);text-align:right}
+    th:first-child,td:first-child{text-align:left}
+    thead th{position:sticky;top:0;background:#0a1525}
+    .loading{display:flex;align-items:center;gap:12px}
+    .spin{width:18px;height:18px;border:2px solid rgba(125,211,252,.22);border-top-color:var(--accent);border-radius:50%;animation:rot 1s linear infinite}
+    @keyframes rot{to{transform:rotate(360deg)}}
+    .hide{display:none!important}
+    @media (max-width:1100px){
+      .hero,.grid2,.controls,.controls.small,.controls.moves,.sumgrid,.valgrid,.stats3,.pk-inner{grid-template-columns:1fr}
+    }
+  </style>
 </head>
 <body>
 <div class="wrap">
-
-  <!-- Header -->
-  <header>
-    <div class="pokeball"><div class="pokeball-stripe"></div></div>
-    <div>
-      <h1>PoGO Damage Calc
-        <span>레벨별 딜 계산기 · Pokemon GO</span>
-      </h1>
+  <section class="hero">
+    <div class="card">
+      <div class="eyebrow">GitHub Pages 정적 웹앱</div>
+      <h1>Pokémon GO 딜 차이 계산기</h1>
+      <p class="muted" style="margin-top:10px">
+        포켓몬고 종족값·기술·타입 상성 데이터를 불러와 현재 레벨과 목표 레벨의 공격력 차이,
+        실제 기술 단발 데미지 차이, 1~51 전체 레벨 표를 확인합니다.
+      </p>
     </div>
-    <div class="api-badges">
-      <span class="badge badge-green">pogoapi.net</span>
-      <span class="badge badge-blue">pokeapi.co</span>
+    <div class="card">
+      <h2>적용 계산식</h2>
+      <p class="muted" style="margin-top:10px"><strong>공격력</strong> = (공격 종족값 + 공격 IV) × CPM</p>
+      <p class="muted"><strong>방어력</strong> = (방어 종족값 + 방어 IV) × CPM</p>
+      <p class="muted"><strong>HP</strong> = floor((체력 종족값 + 체력 IV) × CPM)</p>
+      <p class="muted"><strong>CP</strong> = floor((공격 × √방어 × √HP) / 10), 최소 10</p>
+      <p class="muted"><strong>PvE</strong> = floor(0.5 × 위력 × 공격/방어 × STAB × 상성 × 날씨 × 프렌드) + 1</p>
+      <p class="muted"><strong>PvP</strong> = floor(0.5 × 위력 × 1.3 × 공격/방어 × STAB × 상성) + 1</p>
     </div>
-  </header>
+  </section>
 
-  <!-- Search -->
-  <div class="search-section">
-    <div class="search-label">포켓몬 검색</div>
-    <div class="search-row">
-      <div class="search-wrap">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="searchInput" placeholder="이름 또는 번호로 검색… (예: 가디안, 282)" autocomplete="off">
-        <div class="dropdown" id="dropdown"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Main grid -->
-  <div class="main-grid">
-
-    <!-- Left: Pokemon Card -->
-    <div>
-      <div class="poke-card" id="pokeCard">
-        <div id="cardContent">
-          <div class="loading-state"><div class="spinner"></div>데이터 로딩 중…</div>
-        </div>
-      </div>
-
-      <!-- Formula -->
-      <div style="margin-top:18px;">
-        <div class="panel">
-          <div class="panel-header"><span class="panel-title">계산식</span></div>
-          <div class="panel-body">
-            <div class="formula-box">
-              Damage = Floor(<br>
-              &nbsp;&nbsp;<span class="hi">0.5</span> × <span class="hi2">위력</span> × (<span class="hi">공격자Atk</span> / <span class="hi2">방어자Def</span>)<br>
-              &nbsp;&nbsp;× <span class="hi">STAB</span> × 타입상성<br>
-              ) + 1<br>
-              <br>
-              공격자Atk = (<span class="hi">기본공격</span> + <span class="hi2">공격IV</span>) × <span class="hi">CPM</span><br>
-              STAB = <span class="hi">1.2</span> (자속 보정)<br>
-              <span style="color:var(--text3)">※ 방어자Def = 100 가정 (모델 기준)</span>
-            </div>
-          </div>
-        </div>
+  <section class="card" id="loadingCard">
+    <div class="loading">
+      <div class="spin"></div>
+      <div>
+        <strong id="loadingTitle">데이터 불러오는 중…</strong>
+        <p id="loadingText" class="muted">포켓몬고 API와 한글 이름 인덱스를 준비하고 있습니다.</p>
       </div>
     </div>
+  </section>
 
-    <!-- Right Column -->
-    <div class="right-col">
-
-      <!-- Controls -->
-      <div class="panel">
-        <div class="panel-header"><span class="panel-title">⚙ 설정</span></div>
-        <div class="panel-body">
-          <div class="controls-grid">
-            <div class="ctrl-group">
-              <label>공격 IV</label>
-              <div class="iv-buttons">
-                <button class="iv-btn active" data-iv="15">15</button>
-                <button class="iv-btn" data-iv="13">13</button>
-                <button class="iv-btn" data-iv="10">10</button>
-                <button class="iv-btn" data-iv="0">0</button>
-              </div>
-            </div>
-            <div class="ctrl-group">
-              <label>방어자 DEF</label>
-              <input type="number" id="defInput" value="100" min="1" max="500" step="1">
-            </div>
-            <div class="ctrl-group">
-              <label>타입 상성</label>
-              <select id="effectInput">
-                <option value="2.56">2.56× (2중 효과)</option>
-                <option value="1.6">1.6× (효과 굉장)</option>
-                <option value="1.0" selected>1.0× (보통)</option>
-                <option value="0.625">0.625× (효과 미미)</option>
-                <option value="0.390625">0.390625× (2중 미미)</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="level-compare">
-            <div class="level-block">
-              <label>현재 레벨</label>
-              <div class="level-display" id="curLvDisplay">40</div>
-              <input type="range" id="curLvRange" min="1" max="100" step="1" value="79">
-            </div>
-            <div class="level-block">
-              <label>목표 레벨</label>
-              <div class="level-display target" id="tgtLvDisplay">50</div>
-              <input type="range" class="target-range" id="tgtLvRange" min="1" max="100" step="1" value="100">
-            </div>
-          </div>
-
-          <div class="uplift-banner" id="upliftBanner">
-            <div class="uplift-pct" id="upliftPct">—<span>%</span></div>
-            <div class="uplift-detail" id="upliftDetail">레벨을 선택하세요</div>
-          </div>
-        </div>
+  <section class="grid2">
+    <div class="card">
+      <h2>공격 포켓몬</h2>
+      <p class="muted" style="margin-top:6px">한글 1글자 이상 입력하면 드롭다운 검색이 뜹니다.</p>
+      <div class="search" style="margin-top:12px">
+        <label for="attackerSearch">포켓몬 이름</label>
+        <input id="attackerSearch" type="text" placeholder="예: 메타그로스, 루카리오, 망나뇽" autocomplete="off" />
+        <div id="attackerDropdown" class="dropdown"></div>
       </div>
+      <div id="attackerCard" class="pk-card empty"><p>공격 포켓몬을 선택하세요.</p></div>
+    </div>
 
-      <!-- Moves -->
-      <div class="panel">
-        <div class="panel-header"><span class="panel-title">⚔ 기술 데미지</span></div>
-        <div id="moveSection" class="panel-body">
-          <div class="text-muted">포켓몬을 검색하면 기술 정보가 표시됩니다.</div>
-        </div>
+    <div class="card">
+      <h2>대상 포켓몬</h2>
+      <p class="muted" style="margin-top:6px">대상을 선택하면 실제 단발 데미지 비교를 계산합니다.</p>
+      <div class="search" style="margin-top:12px">
+        <label for="defenderSearch">포켓몬 이름</label>
+        <input id="defenderSearch" type="text" placeholder="예: 해피너스, 뮤츠, 가이오가" autocomplete="off" />
+        <div id="defenderDropdown" class="dropdown"></div>
       </div>
+      <div id="defenderCard" class="pk-card empty"><p>대상 포켓몬을 선택하면 실제 기술 데미지를 계산합니다.</p></div>
+    </div>
+  </section>
 
-      <!-- CPM Table -->
-      <div class="panel cpm-panel">
-        <div class="panel-header"><span class="panel-title">📊 레벨별 공격력 (0.5 단위)</span></div>
-        <div class="cpm-scroll">
-          <div id="cpmSection" style="padding: 20px;">
-            <div class="text-muted">포켓몬을 검색하면 CPM 테이블이 표시됩니다.</div>
-          </div>
-        </div>
+  <section class="card">
+    <h2>계산 설정</h2>
+    <p class="muted" style="margin-top:6px">현재 레벨과 목표 레벨을 넣으면 공격력·CP·실전 데미지를 비교합니다.</p>
+
+    <div class="controls" style="margin-top:14px">
+      <div>
+        <label for="mode">배틀 모드</label>
+        <select id="mode">
+          <option value="pve">레이드 / 체육관 (PvE)</option>
+          <option value="pvp">트레이너배틀 (PvP)</option>
+        </select>
       </div>
+      <div>
+        <label for="currentLevel">현재 레벨</label>
+        <select id="currentLevel"></select>
+      </div>
+      <div>
+        <label for="targetLevel">목표 레벨</label>
+        <select id="targetLevel"></select>
+      </div>
+      <div>
+        <label for="defenderLevel">대상 레벨</label>
+        <select id="defenderLevel"></select>
+      </div>
+      <div>
+        <label for="friendBoost">프렌드 보너스 (PvE)</label>
+        <select id="friendBoost">
+          <option value="1">없음</option>
+          <option value="1.03">친구 (1.03)</option>
+          <option value="1.05">좋은 친구 (1.05)</option>
+          <option value="1.07">울트라 친구 (1.07)</option>
+          <option value="1.1">베스트 친구 (1.10)</option>
+        </select>
+      </div>
+      <div>
+        <label for="weather">날씨 (PvE)</label>
+        <select id="weather">
+          <option value="">없음</option>
+          <option value="Clear">맑음</option>
+          <option value="Rainy">비</option>
+          <option value="Partly Cloudy">구름 조금</option>
+          <option value="Cloudy">흐림</option>
+          <option value="Windy">강풍</option>
+          <option value="Snow">눈</option>
+          <option value="Fog">안개</option>
+        </select>
+      </div>
+    </div>
 
-    </div><!-- /right-col -->
-  </div><!-- /main-grid -->
-</div><!-- /wrap -->
+    <div class="controls small" style="margin-top:12px">
+      <div>
+        <label for="atkIvAtk">공격 IV</label>
+        <input id="atkIvAtk" type="number" min="0" max="15" step="1" value="15" />
+      </div>
+      <div>
+        <label for="atkIvDef">방어 IV</label>
+        <input id="atkIvDef" type="number" min="0" max="15" step="1" value="15" />
+      </div>
+      <div>
+        <label for="atkIvSta">체력 IV</label>
+        <input id="atkIvSta" type="number" min="0" max="15" step="1" value="15" />
+      </div>
+      <div>
+        <label for="defIvDef">대상 방어 IV</label>
+        <input id="defIvDef" type="number" min="0" max="15" step="1" value="15" />
+      </div>
+      <div>
+        <label for="defIvSta">대상 체력 IV</label>
+        <input id="defIvSta" type="number" min="0" max="15" step="1" value="15" />
+      </div>
+    </div>
+
+    <div class="controls moves" style="margin-top:12px">
+      <div>
+        <label for="fastMove">노말 기술</label>
+        <select id="fastMove"><option value="">공격 포켓몬을 먼저 선택하세요</option></select>
+      </div>
+      <div>
+        <label for="chargedMove">스페셜 기술</label>
+        <select id="chargedMove"><option value="">공격 포켓몬을 먼저 선택하세요</option></select>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid2">
+    <div class="card">
+      <h2>레벨 비교 요약</h2>
+      <p class="muted" style="margin-top:6px">같은 포켓몬을 현재 레벨에서 목표 레벨까지 올렸을 때의 차이입니다.</p>
+      <div id="summaryPanel" class="panel empty" style="margin-top:12px"><p>공격 포켓몬을 선택하면 계산 결과가 표시됩니다.</p></div>
+    </div>
+
+    <div class="card">
+      <h2>기술 데미지 비교</h2>
+      <p class="muted" style="margin-top:6px">대상 포켓몬과 기술을 선택하면 현재/목표 레벨 단발 데미지를 비교합니다.</p>
+      <div id="damagePanel" class="panel empty" style="margin-top:12px"><p>공격 포켓몬, 기술, 대상 포켓몬을 선택하세요.</p></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>1 ~ 51 전체 레벨 표</h2>
+    <p class="muted" style="margin-top:6px">0.5 레벨 단위 CPM, 공격력, 방어력, HP, CP를 모두 표시합니다.</p>
+    <div class="table-wrap" style="margin-top:12px">
+      <table>
+        <thead>
+          <tr><th>레벨</th><th>CPM</th><th>공격력</th><th>방어력</th><th>HP</th><th>CP</th></tr>
+        </thead>
+        <tbody id="levelBody">
+          <tr><td colspan="6" class="table-empty">공격 포켓몬을 선택하면 표가 채워집니다.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>참고</h2>
+    <ul class="note muted" style="margin:10px 0 0;padding-left:18px">
+      <li>포켓몬고 종족값, 현재 기술, PvP 기술, 타입 상성, 날씨 부스트는 PoGoAPI를 사용합니다.</li>
+      <li>포켓몬 이름 검색은 한글 이름 우선이고, 영어 이름/PoGo 이름으로도 검색됩니다.</li>
+      <li>공식 일러스트는 PokéAPI 쪽 공용 아트워크를 사용합니다.</li>
+      <li>폼별 데이터가 여러 개일 때는 기본적으로 Normal 폼을 우선 적용합니다.</li>
+    </ul>
+  </section>
+</div>
 
 <script>
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// STATE
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const state = {
-  allPokemon: [],       // from pogoapi stats
-  fastMoves: [],
-  chargedMoves: [],
-  cpmTable: [],
-  currentPoke: null,
-  currentPokeDetails: null, // from pokeapi (image, types, kr name)
-  pokeNames: {},        // id -> name map
-  iv: 15,
-  def: 100,
-  effect: 1.0,
-  curLv: 40,
-  tgtLv: 50,
-};
+(() => {
+  const CPM = {
+    1:0.0939999967813491,1.5:0.135137430784308,2:0.166397869586944,2.5:0.192650914456886,3:0.215732470154762,
+    3.5:0.236572655026622,4:0.255720049142837,4.5:0.273530381100769,5:0.29024988412857,5.5:0.306057381335773,
+    6:0.321087598800659,6.5:0.335445032295077,7:0.349212676286697,7.5:0.36245774877879,8:0.375235587358474,
+    8.5:0.387592411085168,9:0.399567276239395,9.5:0.41119354951725,10:0.422500014305114,10.5:0.432926413410414,
+    11:0.443107545375824,11.5:0.453059953871985,12:0.46279838681221,12.5:0.472336077786704,13:0.481684952974319,
+    13.5:0.490855810259008,14:0.499858438968658,14.5:0.508701756943992,15:0.517393946647644,15.5:0.525942508771329,
+    16:0.534354329109191,16.5:0.542635762230353,17:0.550792694091796,17.5:0.558830599438087,18:0.566754519939422,
+    18.5:0.574569148039264,19:0.582278907299041,19.5:0.589887911977272,20:0.59740000963211,20.5:0.604823657502073,
+    21:0.61215728521347,21.5:0.61940411056605,22:0.626567125320434,22.5:0.633649181622743,23:0.640652954578399,
+    23.5:0.647580963301656,24:0.654435634613037,24.5:0.661219263506722,25:0.667934000492096,25.5:0.674581899290818,
+    26:0.681164920330047,26.5:0.687684905887771,27:0.694143652915954,27.5:0.700542893277978,28:0.706884205341339,
+    28.5:0.713169102333341,29:0.719399094581604,29.5:0.725575616972598,30:0.731700003147125,30.5:0.734741011137376,
+    31:0.737769484519958,31.5:0.740785574597326,32:0.743789434432983,32.5:0.746781208702482,33:0.749761044979095,
+    33.5:0.752729105305821,34:0.75568550825119,34.5:0.758630366519684,35:0.761563837528228,35.5:0.764486065255226,
+    36:0.767397165298461,36.5:0.77029727397159,37:0.77318650484085,37.5:0.776064945942412,38:0.778932750225067,
+    38.5:0.781790064808426,39:0.784636974334716,39.5:0.787473583646825,40:0.790300011634826,40.5:0.792803950958807,
+    41:0.795300006866455,41.5:0.79780392148697,42:0.800300002098083,42.5:0.802803892322847,43:0.805299997329711,
+    43.5:0.807803863460723,44:0.81029999256134,44.5:0.812803834895026,45:0.815299987792968,45.5:0.817803806620319,
+    46:0.820299983024597,46.5:0.822803778631297,47:0.825299978256225,47.5:0.827803750922782,48:0.830299973487854,
+    48.5:0.832803753381377,49:0.835300028324127,49.5:0.837803755931569,50:0.840300023555755,50.5:0.842803729034748,51:0.845300018787384
+  };
+  const LEVELS = Object.keys(CPM).map(Number);
+  const TYPE_KO = {Normal:"노말",Fire:"불꽃",Water:"물",Electric:"전기",Grass:"풀",Ice:"얼음",Fighting:"격투",Poison:"독",Ground:"땅",Flying:"비행",Psychic:"에스퍼",Bug:"벌레",Rock:"바위",Ghost:"고스트",Dragon:"드래곤",Dark:"악",Steel:"강철",Fairy:"페어리"};
+  const WEATHER_KO = {Clear:"맑음",Rainy:"비","Partly Cloudy":"구름 조금",Cloudy:"흐림",Windy:"강풍",Snow:"눈",Fog:"안개"};
+  const API = {
+    released:"https://pogoapi.net/api/v1/released_pokemon.json",
+    stats:"https://pogoapi.net/api/v1/pokemon_stats.json",
+    types:"https://pogoapi.net/api/v1/pokemon_types.json",
+    moves:"https://pogoapi.net/api/v1/current_pokemon_moves.json",
+    fast:"https://pogoapi.net/api/v1/fast_moves.json",
+    charged:"https://pogoapi.net/api/v1/charged_moves.json",
+    pvpFast:"https://pogoapi.net/api/v1/pvp_fast_moves.json",
+    pvpCharged:"https://pogoapi.net/api/v1/pvp_charged_moves.json",
+    effect:"https://pogoapi.net/api/v1/type_effectiveness.json",
+    weather:"https://pogoapi.net/api/v1/weather_boosts.json",
+    speciesCsv:"https://cdn.jsdelivr.net/gh/PokeAPI/pokeapi@master/data/v2/csv/pokemon_species.csv",
+    speciesNamesCsv:"https://cdn.jsdelivr.net/gh/PokeAPI/pokeapi@master/data/v2/csv/pokemon_species_names.csv",
+    artwork:(id)=>`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`
+  };
 
-const LEVELS = [];
-for (let l = 1; l <= 50; l += 0.5) LEVELS.push(l);
+  const el = {
+    loadingCard:document.querySelector("#loadingCard"),
+    loadingTitle:document.querySelector("#loadingTitle"),
+    loadingText:document.querySelector("#loadingText"),
+    attackerSearch:document.querySelector("#attackerSearch"),
+    attackerDropdown:document.querySelector("#attackerDropdown"),
+    attackerCard:document.querySelector("#attackerCard"),
+    defenderSearch:document.querySelector("#defenderSearch"),
+    defenderDropdown:document.querySelector("#defenderDropdown"),
+    defenderCard:document.querySelector("#defenderCard"),
+    mode:document.querySelector("#mode"),
+    currentLevel:document.querySelector("#currentLevel"),
+    targetLevel:document.querySelector("#targetLevel"),
+    defenderLevel:document.querySelector("#defenderLevel"),
+    friendBoost:document.querySelector("#friendBoost"),
+    weather:document.querySelector("#weather"),
+    atkIvAtk:document.querySelector("#atkIvAtk"),
+    atkIvDef:document.querySelector("#atkIvDef"),
+    atkIvSta:document.querySelector("#atkIvSta"),
+    defIvDef:document.querySelector("#defIvDef"),
+    defIvSta:document.querySelector("#defIvSta"),
+    fastMove:document.querySelector("#fastMove"),
+    chargedMove:document.querySelector("#chargedMove"),
+    summaryPanel:document.querySelector("#summaryPanel"),
+    damagePanel:document.querySelector("#damagePanel"),
+    levelBody:document.querySelector("#levelBody")
+  };
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Korean type names
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const TYPE_KR = {
-  Normal:'노말',Fire:'불꽃',Water:'물',Electric:'전기',Grass:'풀',Ice:'얼음',
-  Fighting:'격투',Poison:'독',Ground:'땅',Flying:'비행',Psychic:'에스퍼',
-  Bug:'벌레',Rock:'바위',Ghost:'고스트',Dragon:'드래곤',Dark:'악',Steel:'강철',Fairy:'페어리'
-};
-const TYPE_CLASS = {
-  Normal:'normal',Fire:'fire',Water:'water',Electric:'electric',Grass:'grass',Ice:'ice',
-  Fighting:'fighting',Poison:'poison',Ground:'ground',Flying:'flying',Psychic:'psychic',
-  Bug:'bug',Rock:'rock',Ghost:'ghost',Dragon:'dragon',Dark:'dark',Steel:'steel',Fairy:'fairy'
-};
+  const state = {
+    search:[],
+    stats:new Map(),
+    types:new Map(),
+    pools:new Map(),
+    moveMap:{pveFast:new Map(),pveCharged:new Map(),pvpFast:new Map(),pvpCharged:new Map()},
+    effect:{},
+    weather:{},
+    attacker:null,
+    defender:null
+  };
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// CPM DATA (from Game Master, full 0.5 steps to Lv50)
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const CPM_FULL = {
-  1:0.09399999678,1.5:0.13513743132,2:0.16639786959,2.5:0.19265091419,
-  3:0.21573247969,3.5:0.23657265305,4:0.25572004914,4.5:0.27353038891,
-  5:0.29024988880,5.5:0.30605737418,6:0.32108759880,6.5:0.33544503152,
-  7:0.34921267629,7.5:0.36245773939,8:0.37523558736,8.5:0.38759241108,
-  9:0.39956902170,9.5:0.41119354954,10:0.42250001431,10.5:0.43349905660,
-  11:0.44419771739,11.5:0.45461248159,12:0.46474763750,12.5:0.47461720659,
-  13:0.48422727188,13.5:0.49358703919,14:0.50270795822,14.5:0.51160156977,
-  15:0.52026831865,15.5:0.52871572972,16:0.53695088625,16.5:0.54498110913,
-  17:0.55281395465,17.5:0.56045457226,18:0.56790944338,18.5:0.57518497525,
-  19:0.58228696038,19.5:0.58921945542,20:0.59740001500,20.5:0.60400420427,
-  21:0.61051368713,21.5:0.61693899870,22:0.62328093500,22.5:0.62954243064,
-  23:0.63572144508,23.5:0.64182144773,24:0.64784144611,24.5:0.65378143943,
-  25:0.65964142561,25.5:0.66542388439,26:0.67112988234,26.5:0.67676091585,
-  27:0.68231749535,27.5:0.68780148230,28:0.69321441650,28.5:0.69855785370,
-  29:0.70383477810,29.5:0.70904798508,30:0.71300002933,30.5:0.71689999700,
-  31:0.72075002670,31.5:0.72455999600,32:0.72831999780,32.5:0.73203999850,
-  33:0.73571999553,33.5:0.73936000093,34:0.74296002389,34.5:0.74651999474,
-  35:0.75003999472,35.5:0.75351999604,36:0.75696003437,36.5:0.76036000788,
-  37:0.76372001529,37.5:0.76704001427,38:0.77030998468,38.5:0.77354001045,
-  39:0.77673000097,39.5:0.77988002077,40:0.79030001163,40.5:0.79530000686,
-  41:0.80029999256,41.5:0.80529999733,42:0.81029999256,42.5:0.81529999733,
-  43:0.82029999256,43.5:0.82529999733,44:0.83029999256,44.5:0.83529999733,
-  45:0.84029999256,45.5:0.84529999733,46:0.85029999256,46.5:0.85529999733,
-  47:0.86029999256,47.5:0.86529999733,48:0.87029999256,48.5:0.87529999733,
-  49:0.88029999256,49.5:0.88529999733,50:0.89029999256,
-};
+  const esc = (v) => String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;");
+  const norm = (v) => String(v ?? "").toLowerCase().replace(/\s+/g,"").replace(/[.'’`-]/g,"");
+  const fmt = (v,d=2) => Number(v).toLocaleString("ko-KR",{minimumFractionDigits:d,maximumFractionDigits:d});
+  const fmtNum = (v) => Number.isInteger(v) ? Number(v).toLocaleString("ko-KR") : fmt(v,2);
+  const pct = (ratio) => `${(ratio-1)>=0?"+":""}${fmt((ratio-1)*100,2)}%`;
+  const cls = (ratio) => ratio > 1.00001 ? "good" : ratio < 0.99999 ? "bad" : "warn";
+  const iv = (v) => Math.max(0, Math.min(15, Math.round(Number(v) || 0)));
+  const pick = (list) => (list || []).find(x => x.form === "Normal") || (list || []).find(x => !x.form) || (list || [])[0] || null;
 
-function getCPM(level) { return CPM_FULL[level] || 0; }
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// LEVEL STEPS (0.5 unit, indices)
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const LEVEL_STEPS = Object.keys(CPM_FULL).map(Number).sort((a,b)=>a-b);
-// slider value 1..N -> level
-function sliderToLevel(val) { return LEVEL_STEPS[val - 1]; }
-function levelToSlider(lv)  { return LEVEL_STEPS.indexOf(lv) + 1; }
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// CALC
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function calcAtk(baseAtk, iv, level) {
-  return (baseAtk + iv) * getCPM(level);
-}
-function calcDmg(baseAtk, iv, level, power, stab, effect, def) {
-  const atk = calcAtk(baseAtk, iv, level);
-  return Math.floor(0.5 * power * (atk / def) * stab * effect) + 1;
-}
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// FETCH HELPERS
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-async function fetchJSON(url) {
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(`HTTP ${r.status}: ${url}`);
-  return r.json();
-}
-
-// pokeapi sprite url
-function spriteUrl(id) {
-  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
-}
-function spriteUrlFront(id) {
-  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
-}
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// LOAD CORE DATA
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-async function loadCoreData() {
-  try {
-    const [stats, fast, charged] = await Promise.all([
-      fetchJSON('https://pogoapi.net/api/v1/pokemon_stats.json'),
-      fetchJSON('https://pogoapi.net/api/v1/fast_moves.json'),
-      fetchJSON('https://pogoapi.net/api/v1/charged_moves.json'),
-    ]);
-    state.allPokemon = stats;
-    state.fastMoves = fast;
-    state.chargedMoves = charged;
-
-    // build name lookup
-    stats.forEach(p => { state.pokeNames[p.id] = p.name; });
-
-    // default: Gardevoir
-    const gardevoir = stats.find(p => p.id === 282);
-    if (gardevoir) selectPokemon(gardevoir);
-
-  } catch(e) {
-    document.getElementById('cardContent').innerHTML =
-      `<div class="loading-state" style="color:var(--danger)">⚠ API 로드 실패: ${e.message}</div>`;
+  function setLoading(title, text){
+    el.loadingTitle.textContent = title;
+    el.loadingText.textContent = text;
   }
-}
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// SELECT POKEMON
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-async function selectPokemon(poke) {
-  state.currentPoke = poke;
-  state.currentPokeDetails = null;
+  function fillLevelOptions(){
+    const html = LEVELS.map(l => `<option value="${l}">${l}</option>`).join("");
+    el.currentLevel.innerHTML = html;
+    el.targetLevel.innerHTML = html;
+    el.defenderLevel.innerHTML = html;
+    el.currentLevel.value = "35";
+    el.targetLevel.value = "50";
+    el.defenderLevel.value = "40";
+  }
 
-  // Render placeholder card immediately
-  renderPokeCard(poke, null);
-  renderMoves(poke);
-  renderCPMTable(poke);
+  function parseCsv(text){
+    const rows = [];
+    let row = [], cell = "", q = false;
+    for(let i=0;i<text.length;i++){
+      const ch = text[i], nx = text[i+1];
+      if(ch === '"'){
+        if(q && nx === '"'){ cell += '"'; i++; }
+        else q = !q;
+        continue;
+      }
+      if(ch === "," && !q){ row.push(cell); cell=""; continue; }
+      if((ch === "\n" || ch === "\r") && !q){
+        if(ch === "\r" && nx === "\n") i++;
+        row.push(cell); cell="";
+        if(row.length > 1 || row[0] !== "") rows.push(row);
+        row = [];
+        continue;
+      }
+      cell += ch;
+    }
+    if(cell.length || row.length){ row.push(cell); rows.push(row); }
+    const [head,...body] = rows;
+    const keys = head.map((k,i)=> i===0 ? k.replace(/^\uFEFF/,"") : k);
+    return body.map(r => Object.fromEntries(keys.map((k,i)=>[k, r[i] ?? ""])));
+  }
 
-  // Fetch enriched data from PokeAPI
-  try {
-    const [pkData, speciesData] = await Promise.all([
-      fetchJSON(`https://pokeapi.co/api/v2/pokemon/${poke.id}`),
-      fetchJSON(`https://pokeapi.co/api/v2/pokemon-species/${poke.id}`),
+  function indexById(arr,key="id"){
+    const m = new Map();
+    arr.forEach(x => {
+      const id = Number(x[key]);
+      if(Number.isFinite(id)) m.set(id, x);
+    });
+    return m;
+  }
+
+  function groupById(arr,key="pokemon_id"){
+    const m = new Map();
+    arr.forEach(x => {
+      const id = Number(x[key]);
+      if(!Number.isFinite(id)) return;
+      if(!m.has(id)) m.set(id, []);
+      m.get(id).push(x);
+    });
+    return m;
+  }
+
+  function getPokemon(id){
+    if(!id) return null;
+    const meta = state.search.find(x => x.id === Number(id));
+    if(!meta) return null;
+    const stat = state.stats.get(Number(id));
+    const typeEntry = pick(state.types.get(Number(id)));
+    const moveEntry = pick(state.pools.get(Number(id)));
+    return {
+      ...meta,
+      form: moveEntry?.form || typeEntry?.form || "Normal",
+      image: API.artwork(id),
+      types: Array.isArray(typeEntry?.type) ? typeEntry.type : [],
+      stats:{
+        baseAttack:Number(stat?.base_attack ?? 0),
+        baseDefense:Number(stat?.base_defense ?? 0),
+        baseStamina:Number(stat?.base_stamina ?? 0)
+      },
+      fastMoves:[...new Set(moveEntry?.fast_moves || [])].sort((a,b)=>a.localeCompare(b)),
+      chargedMoves:[...new Set(moveEntry?.charged_moves || [])].sort((a,b)=>a.localeCompare(b))
+    };
+  }
+
+  function getAtkIvs(){ return {attack:iv(el.atkIvAtk.value), defense:iv(el.atkIvDef.value), stamina:iv(el.atkIvSta.value)}; }
+  function getDefIvs(){ return {attack:0, defense:iv(el.defIvDef.value), stamina:iv(el.defIvSta.value)}; }
+
+  function calcStats(pokemon, level, ivs){
+    const m = CPM[level];
+    const atk = (pokemon.stats.baseAttack + ivs.attack) * m;
+    const def = (pokemon.stats.baseDefense + ivs.defense) * m;
+    const hp = Math.floor((pokemon.stats.baseStamina + ivs.stamina) * m);
+    const cp = Math.max(10, Math.floor(
+      ((pokemon.stats.baseAttack + ivs.attack) *
+      Math.sqrt(pokemon.stats.baseDefense + ivs.defense) *
+      Math.sqrt(pokemon.stats.baseStamina + ivs.stamina) *
+      m * m) / 10
+    ));
+    return {level,cpm:m,attack:atk,defense:def,hp,cp};
+  }
+
+  function getMove(name, mode, kind){
+    if(!name) return null;
+    if(mode === "pvp" && kind === "fast") return state.moveMap.pvpFast.get(name) || null;
+    if(mode === "pvp" && kind === "charged") return state.moveMap.pvpCharged.get(name) || null;
+    if(mode === "pve" && kind === "fast") return state.moveMap.pveFast.get(name) || null;
+    return state.moveMap.pveCharged.get(name) || null;
+  }
+
+  function typeMult(moveType, defTypes){
+    const row = state.effect[moveType] || {};
+    return defTypes.reduce((m,t)=>m * Number(row[t] ?? 1), 1);
+  }
+
+  function weatherMult(moveType){
+    const w = el.weather.value;
+    if(!w) return 1;
+    return (state.weather[w] || []).includes(moveType) ? 1.2 : 1;
+  }
+
+  function calcDamage({mode, move, attacker, attackerLevel, defender, defenderLevel, atkIvs, defIvs}){
+    if(!move || !attacker || !defender) return null;
+    const a = calcStats(attacker, attackerLevel, atkIvs);
+    const d = calcStats(defender, defenderLevel, {attack:0, defense:defIvs.defense, stamina:defIvs.stamina});
+    const stab = attacker.types.includes(move.type) ? 1.2 : 1;
+    const eff = typeMult(move.type, defender.types);
+    const weather = mode === "pve" ? weatherMult(move.type) : 1;
+    const friend = mode === "pve" ? Number(el.friendBoost.value) : 1;
+    const pvp = mode === "pvp" ? 1.3 : 1;
+    const damage = Math.floor(0.5 * Number(move.power || 0) * pvp * (a.attack / d.defense) * stab * eff * weather * friend) + 1;
+    return {damage, stab, eff, weather, friend, a, d};
+  }
+
+  function resultList(q){
+    const n = norm(q);
+    if(n.length < 1) return [];
+    const start = [], contain = [];
+    state.search.forEach(p => {
+      const ko = norm(p.koName), en = norm(p.enName), pogo = norm(p.pogoName);
+      if(!(ko.includes(n) || en.includes(n) || pogo.includes(n))) return;
+      ((ko.startsWith(n) || en.startsWith(n) || pogo.startsWith(n)) ? start : contain).push(p);
+    });
+    return [...start, ...contain].slice(0, 12);
+  }
+
+  function drawDropdown(box, items, cb){
+    if(!items.length){ box.classList.remove("open"); box.innerHTML = ""; return; }
+    box.innerHTML = items.map(p => `
+      <div class="item" data-id="${p.id}">
+        <div style="display:flex;justify-content:space-between;gap:8px"><strong>${esc(p.koName)}</strong><span class="muted">#${p.id}</span></div>
+        <div class="muted">${esc(p.enName)}</div>
+      </div>
+    `).join("");
+    box.querySelectorAll(".item").forEach(node => {
+      node.addEventListener("click", () => {
+        const id = Number(node.dataset.id);
+        const p = state.search.find(x => x.id === id);
+        if(p) cb(p);
+      });
+    });
+    box.classList.add("open");
+  }
+
+  function closeDropdown(box){
+    box.classList.remove("open");
+    box.innerHTML = "";
+  }
+
+  function cardHTML(pokemon, emptyText){
+    if(!pokemon) return `<div class="pk-card empty"><p>${emptyText}</p></div>`;
+    return `
+      <div class="pk-card">
+        <div class="pk-inner">
+          <div class="art"><img src="${esc(pokemon.image)}" alt="${esc(pokemon.koName)} 공식 일러스트" loading="lazy"></div>
+          <div>
+            <div class="row">
+              <h3>${esc(pokemon.koName)}</h3>
+              <span class="badge">#${pokemon.id}</span>
+              <span class="badge">${esc(pokemon.enName)}</span>
+              <span class="badge">폼: ${esc(pokemon.form)}</span>
+            </div>
+            <div class="row" style="margin-top:10px">
+              ${pokemon.types.length ? pokemon.types.map(t => `<span class="chip">${esc(TYPE_KO[t] || t)}</span>`).join("") : `<span class="badge">타입 정보 없음</span>`}
+            </div>
+            <div class="stats3">
+              <div class="box"><span>기본 공격</span><strong>${fmtNum(pokemon.stats.baseAttack)}</strong></div>
+              <div class="box"><span>기본 방어</span><strong>${fmtNum(pokemon.stats.baseDefense)}</strong></div>
+              <div class="box"><span>기본 체력</span><strong>${fmtNum(pokemon.stats.baseStamina)}</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderMoveSelects(){
+    const attacker = getPokemon(state.attacker);
+    if(!attacker){
+      el.fastMove.innerHTML = `<option value="">공격 포켓몬을 먼저 선택하세요</option>`;
+      el.chargedMove.innerHTML = `<option value="">공격 포켓몬을 먼저 선택하세요</option>`;
+      return;
+    }
+    const mode = el.mode.value;
+    const fastOptions = attacker.fastMoves.map(name => {
+      const m = getMove(name, mode, "fast");
+      const label = m ? `${name} · ${TYPE_KO[m.type] || m.type} · 위력 ${m.power}` : name;
+      return `<option value="${esc(name)}">${esc(label)}</option>`;
+    }).join("");
+    const chargedOptions = attacker.chargedMoves.map(name => {
+      const m = getMove(name, mode, "charged");
+      const label = m ? `${name} · ${TYPE_KO[m.type] || m.type} · 위력 ${m.power}` : name;
+      return `<option value="${esc(name)}">${esc(label)}</option>`;
+    }).join("");
+    const prevFast = el.fastMove.value;
+    const prevCharged = el.chargedMove.value;
+    el.fastMove.innerHTML = `<option value="">노말 기술 선택</option>${fastOptions}`;
+    el.chargedMove.innerHTML = `<option value="">스페셜 기술 선택</option>${chargedOptions}`;
+    el.fastMove.value = attacker.fastMoves.includes(prevFast) ? prevFast : (attacker.fastMoves[0] || "");
+    el.chargedMove.value = attacker.chargedMoves.includes(prevCharged) ? prevCharged : (attacker.chargedMoves[0] || "");
+  }
+
+  function renderSummary(){
+    const attacker = getPokemon(state.attacker);
+    if(!attacker){
+      el.summaryPanel.className = "panel empty";
+      el.summaryPanel.innerHTML = "<p>공격 포켓몬을 선택하면 계산 결과가 표시됩니다.</p>";
+      return;
+    }
+    const cur = calcStats(attacker, Number(el.currentLevel.value), getAtkIvs());
+    const tar = calcStats(attacker, Number(el.targetLevel.value), getAtkIvs());
+    const rAtk = tar.attack / cur.attack;
+    const rDef = tar.defense / cur.defense;
+    const rHp = tar.hp / cur.hp;
+    const rCp = tar.cp / cur.cp;
+    el.summaryPanel.className = "panel";
+    el.summaryPanel.innerHTML = `
+      <div class="sub">
+        <div class="box">
+          <h3>${esc(attacker.koName)} · 레벨 ${el.currentLevel.value} → ${el.targetLevel.value}</h3>
+          <div class="sumgrid" style="margin-top:12px">
+            <div class="box"><span>실효 공격력 차이</span><strong class="${cls(rAtk)}">${pct(rAtk)}</strong></div>
+            <div class="box"><span>실효 방어력 차이</span><strong class="${cls(rDef)}">${pct(rDef)}</strong></div>
+            <div class="box"><span>HP 차이</span><strong class="${cls(rHp)}">${pct(rHp)}</strong></div>
+            <div class="box"><span>CP 차이</span><strong class="${cls(rCp)}">${pct(rCp)}</strong></div>
+          </div>
+        </div>
+        <div class="valgrid">
+          <div class="box">
+            <h4>현재 레벨</h4>
+            <div style="margin-top:8px"><small>공격력</small><strong>${fmt(cur.attack,3)}</strong></div>
+            <div><small>방어력</small><strong>${fmt(cur.defense,3)}</strong></div>
+            <div><small>HP</small><strong>${fmtNum(cur.hp)}</strong></div>
+            <div><small>CP</small><strong>${fmtNum(cur.cp)}</strong></div>
+          </div>
+          <div class="box">
+            <h4>목표 레벨</h4>
+            <div style="margin-top:8px"><small>공격력</small><strong>${fmt(tar.attack,3)}</strong></div>
+            <div><small>방어력</small><strong>${fmt(tar.defense,3)}</strong></div>
+            <div><small>HP</small><strong>${fmtNum(tar.hp)}</strong></div>
+            <div><small>CP</small><strong>${fmtNum(tar.cp)}</strong></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderDamage(){
+    const attacker = getPokemon(state.attacker);
+    const defender = getPokemon(state.defender);
+    if(!attacker){
+      el.damagePanel.className = "panel empty";
+      el.damagePanel.innerHTML = "<p>공격 포켓몬을 먼저 선택하세요.</p>";
+      return;
+    }
+    if(!defender){
+      const cur = calcStats(attacker, Number(el.currentLevel.value), getAtkIvs());
+      const tar = calcStats(attacker, Number(el.targetLevel.value), getAtkIvs());
+      const ratio = tar.attack / cur.attack;
+      el.damagePanel.className = "panel";
+      el.damagePanel.innerHTML = `
+        <div class="box">
+          <h3>대상 포켓몬이 없어서 공격력 기준만 계산했습니다.</h3>
+          <div class="formula" style="margin-top:12px">
+            현재 레벨 대비 목표 레벨의 공격력 배율은 <strong class="${cls(ratio)}">${fmt(ratio,4)}배 (${pct(ratio)})</strong> 입니다.
+          </div>
+        </div>
+      `;
+      return;
+    }
+    const mode = el.mode.value;
+    const fast = getMove(el.fastMove.value, mode, "fast");
+    const charged = getMove(el.chargedMove.value, mode, "charged");
+    if(!fast && !charged){
+      el.damagePanel.className = "panel empty";
+      el.damagePanel.innerHTML = "<p>기술을 하나 이상 선택하면 단발 데미지 차이를 계산합니다.</p>";
+      return;
+    }
+    const atkIvs = getAtkIvs();
+    const defIvs = getDefIvs();
+    const sections = [];
+    [["노말 기술", fast], ["스페셜 기술", charged]].forEach(([label,move]) => {
+      if(!move) return;
+      const current = calcDamage({
+        mode, move, attacker, attackerLevel:Number(el.currentLevel.value),
+        defender, defenderLevel:Number(el.defenderLevel.value), atkIvs, defIvs
+      });
+      const target = calcDamage({
+        mode, move, attacker, attackerLevel:Number(el.targetLevel.value),
+        defender, defenderLevel:Number(el.defenderLevel.value), atkIvs, defIvs
+      });
+      const ratio = target.damage / current.damage;
+      sections.push(`
+        <div class="box">
+          <h3>${label}: ${esc(move.name)}</h3>
+          <div class="sumgrid" style="margin-top:12px">
+            <div class="box"><span>현재 레벨 데미지</span><strong>${fmtNum(current.damage)}</strong></div>
+            <div class="box"><span>목표 레벨 데미지</span><strong>${fmtNum(target.damage)}</strong></div>
+            <div class="box"><span>데미지 차이</span><strong class="${cls(ratio)}">${pct(ratio)}</strong></div>
+            <div class="box"><span>배율</span><strong class="${cls(ratio)}">${fmt(ratio,4)}배</strong></div>
+          </div>
+          <div class="formula">
+            <div>위력: <strong>${move.power}</strong> · 타입: <strong>${TYPE_KO[move.type] || move.type}</strong> · 대상 타입: <strong>${defender.types.map(t=>TYPE_KO[t] || t).join(" / ")}</strong></div>
+            <div>STAB: <strong>${current.stab > 1 ? "예 (1.2)" : "아니오"}</strong> · 상성 배율: <strong>${fmt(current.eff,3)}</strong></div>
+            <div>PvE 날씨: <strong>${mode === "pve" ? `${current.weather > 1 ? `${WEATHER_KO[el.weather.value] || el.weather.value} 적용` : "없음"} (${fmt(current.weather,2)})` : "미적용"}</strong> · PvE 프렌드: <strong>${mode === "pve" ? fmt(current.friend,2) : "미적용"}</strong></div>
+            <div>계산에 사용한 대상 방어력: <strong>${fmt(current.d.defense,3)}</strong> (대상 레벨 ${el.defenderLevel.value})</div>
+          </div>
+        </div>
+      `);
+    });
+    el.damagePanel.className = "panel";
+    el.damagePanel.innerHTML = `<div class="sub">${sections.join("")}</div>`;
+  }
+
+  function renderTable(){
+    const attacker = getPokemon(state.attacker);
+    if(!attacker){
+      el.levelBody.innerHTML = `<tr><td colspan="6" class="table-empty">공격 포켓몬을 선택하면 표가 채워집니다.</td></tr>`;
+      return;
+    }
+    const atkIvs = getAtkIvs();
+    el.levelBody.innerHTML = LEVELS.map(level => {
+      const s = calcStats(attacker, level, atkIvs);
+      return `<tr><td>${level}</td><td>${fmt(s.cpm,9)}</td><td>${fmt(s.attack,3)}</td><td>${fmt(s.defense,3)}</td><td>${fmtNum(s.hp)}</td><td>${fmtNum(s.cp)}</td></tr>`;
+    }).join("");
+  }
+
+  function refresh(){
+    document.querySelector("#attackerCard").innerHTML = getPokemon(state.attacker)
+      ? cardHTML(getPokemon(state.attacker), "").replace(/^<div class="pk-card">|<\/div>$/g,"")
+      : "<p>공격 포켓몬을 선택하세요.</p>";
+    document.querySelector("#attackerCard").className = getPokemon(state.attacker) ? "pk-card" : "pk-card empty";
+
+    document.querySelector("#defenderCard").innerHTML = getPokemon(state.defender)
+      ? cardHTML(getPokemon(state.defender), "").replace(/^<div class="pk-card">|<\/div>$/g,"")
+      : "<p>대상 포켓몬을 선택하면 실제 기술 데미지를 계산합니다.</p>";
+    document.querySelector("#defenderCard").className = getPokemon(state.defender) ? "pk-card" : "pk-card empty";
+
+    renderMoveSelects();
+    renderSummary();
+    renderDamage();
+    renderTable();
+  }
+
+  function setupSearch(input, dropdown, role){
+    const selectPokemon = (p) => {
+      if(role === "attacker"){ state.attacker = p.id; el.attackerSearch.value = p.koName; }
+      else { state.defender = p.id; el.defenderSearch.value = p.koName; }
+      closeDropdown(dropdown);
+      refresh();
+    };
+    input.addEventListener("input", e => drawDropdown(dropdown, resultList(e.target.value), selectPokemon));
+    input.addEventListener("focus", () => drawDropdown(dropdown, resultList(input.value), selectPokemon));
+    document.addEventListener("click", e => {
+      if(!dropdown.contains(e.target) && !input.contains(e.target)) closeDropdown(dropdown);
+    });
+  }
+
+  async function fetchJson(url){
+    const res = await fetch(url);
+    if(!res.ok) throw new Error(url);
+    return res.json();
+  }
+
+  async function fetchText(url){
+    const res = await fetch(url);
+    if(!res.ok) throw new Error(url);
+    return res.text();
+  }
+
+  async function load(){
+    setLoading("데이터 불러오는 중…","포켓몬고 데이터와 한글 이름 인덱스를 가져오고 있습니다.");
+    const [released, stats, types, pools, fast, charged, pvpFast, pvpCharged, effect, weather, speciesCsv, speciesNamesCsv] = await Promise.all([
+      fetchJson(API.released), fetchJson(API.stats), fetchJson(API.types), fetchJson(API.moves),
+      fetchJson(API.fast), fetchJson(API.charged), fetchJson(API.pvpFast), fetchJson(API.pvpCharged),
+      fetchJson(API.effect), fetchJson(API.weather), fetchText(API.speciesCsv), fetchText(API.speciesNamesCsv)
     ]);
 
-    // Korean name
-    const krName = speciesData.names?.find(n => n.language.name === 'ko')?.name || poke.name;
+    state.stats = indexById(stats, "id");
+    state.types = groupById(types, "pokemon_id");
+    state.pools = groupById(pools, "pokemon_id");
+    state.effect = effect;
+    state.weather = weather;
+    state.moveMap.pveFast = new Map(fast.map(m => [m.name, m]));
+    state.moveMap.pveCharged = new Map(charged.map(m => [m.name, m]));
+    state.moveMap.pvpFast = new Map(pvpFast.map(m => [m.name, m]));
+    state.moveMap.pvpCharged = new Map(pvpCharged.map(m => [m.name, m]));
 
-    // Types
-    const types = pkData.types.map(t => {
-      const en = t.type.name;
-      const cap = en.charAt(0).toUpperCase() + en.slice(1);
-      return cap;
+    setLoading("인덱스 구성 중…","한글 이름, 출시 여부, 종족값, 기술 정보를 결합하고 있습니다.");
+
+    const releasedIds = new Set(Object.keys(released).map(Number));
+    const species = parseCsv(speciesCsv);
+    const speciesNames = parseCsv(speciesNamesCsv);
+    const enById = new Map();
+    species.forEach(r => { const id = Number(r.id); if(Number.isFinite(id)) enById.set(id, r.identifier); });
+    const koById = new Map();
+    speciesNames.forEach(r => {
+      if(String(r.local_language_id) !== "3") return;
+      const id = Number(r.pokemon_species_id);
+      if(Number.isFinite(id)) koById.set(id, r.name);
     });
 
-    // Moves from PokeAPI (PoGO fast/charge filtered)
-    state.currentPokeDetails = { krName, types, sprite: spriteUrl(poke.id), spriteSmall: spriteUrlFront(poke.id) };
-    renderPokeCard(poke, state.currentPokeDetails);
+    state.search = [...releasedIds]
+      .filter(id => enById.has(id) && state.stats.has(id) && state.pools.has(id))
+      .map(id => ({
+        id,
+        enName: enById.get(id),
+        pogoName: released[id]?.name || enById.get(id),
+        koName: koById.get(id) || enById.get(id)
+      }))
+      .sort((a,b)=>a.id-b.id);
 
-    // Now get PoGO moveset from pogoapi
-    const pogoMoves = await fetchJSON(`https://pogoapi.net/api/v1/current_pokemon_moves.json`).catch(()=>null);
-    if (pogoMoves) {
-      const entry = pogoMoves.find(m => m.pokemon_id === poke.id);
-      if (entry) {
-        state.currentPokeDetails.fastMoveNames = entry.fast_moves || [];
-        state.currentPokeDetails.chargedMoveNames = entry.charged_moves || [];
-        renderMoves(poke);
-      }
-    }
-  } catch(e) {
-    console.warn('PokeAPI fetch failed:', e);
-    // still show with what we have
-  }
-}
+    state.attacker = state.search.find(p => p.koName === "메타그로스")?.id || state.search.find(p => p.enName === "metagross")?.id || state.search[0]?.id || null;
+    state.defender = state.search.find(p => p.koName === "해피너스")?.id || state.search.find(p => p.enName === "blissey")?.id || null;
+    if(state.attacker) el.attackerSearch.value = getPokemon(state.attacker).koName;
+    if(state.defender) el.defenderSearch.value = getPokemon(state.defender).koName;
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// RENDER POKEMON CARD
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function renderPokeCard(poke, details) {
-  const maxAtk = 300, maxDef = 300, maxSta = 500;
-  const atk = parseInt(poke.base_attack);
-  const def = parseInt(poke.base_defense);
-  const sta = parseInt(poke.base_stamina);
-
-  const krName = details?.krName || poke.name;
-  const types  = details?.types || [];
-  const sprite = details?.sprite;
-
-  const typeBadges = types.map(t => {
-    const cls = TYPE_CLASS[t] || '';
-    const kr  = TYPE_KR[t] || t;
-    return `<span class="poke-type-badge t-${cls}">${kr}</span>`;
-  }).join('');
-
-  const imgHtml = sprite
-    ? `<img class="poke-sprite" src="${sprite}" alt="${krName}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`
-    : '';
-  const fallback = `<div class="poke-sprite-placeholder" ${sprite ? 'style="display:none"' : ''}>?</div>`;
-
-  document.getElementById('cardContent').innerHTML = `
-    <div class="poke-hero">
-      <div class="poke-hero-bg"></div>
-      <div class="poke-id">#${String(poke.id).padStart(3,'0')}</div>
-      ${imgHtml}${fallback}
-      <div class="poke-name-en">${poke.name}</div>
-      <div class="poke-name">${krName}</div>
-      <div class="poke-types">${typeBadges}</div>
-    </div>
-    <div class="poke-stats">
-      <div class="stat-row">
-        <div class="stat-label">ATK</div>
-        <div class="stat-bar-wrap"><div class="stat-bar stat-bar-atk" style="width:${atk/maxAtk*100}%"></div></div>
-        <div class="stat-val">${atk}</div>
-      </div>
-      <div class="stat-row">
-        <div class="stat-label">DEF</div>
-        <div class="stat-bar-wrap"><div class="stat-bar stat-bar-def" style="width:${def/maxDef*100}%"></div></div>
-        <div class="stat-val">${def}</div>
-      </div>
-      <div class="stat-row">
-        <div class="stat-label">STA</div>
-        <div class="stat-bar-wrap"><div class="stat-bar stat-bar-sta" style="width:${sta/maxSta*100}%"></div></div>
-        <div class="stat-val">${sta}</div>
-      </div>
-    </div>
-  `;
-}
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// RENDER MOVES
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function renderMoves(poke) {
-  const baseAtk = parseInt(poke.base_attack);
-  const { iv, def, effect, curLv, tgtLv } = state;
-  const details = state.currentPokeDetails;
-
-  // Gather moves to show
-  let fastList = [], chargedList = [];
-  if (details?.fastMoveNames?.length) {
-    fastList = state.fastMoves.filter(m => details.fastMoveNames.includes(m.name));
-  }
-  if (details?.chargedMoveNames?.length) {
-    chargedList = state.chargedMoves.filter(m => details.chargedMoveNames.includes(m.name));
+    el.loadingCard.classList.add("hide");
+    refresh();
   }
 
-  // Fallback: show all moves if no moveset data
-  if (!fastList.length && !chargedList.length) {
-    // show a note
-    document.getElementById('moveSection').innerHTML = `
-      <div class="text-muted">기술 데이터 로딩 중… 기본 계산식은 아래 CPM 테이블을 참고하세요.</div>
-    `;
-    return;
-  }
+  fillLevelOptions();
+  setupSearch(el.attackerSearch, el.attackerDropdown, "attacker");
+  setupSearch(el.defenderSearch, el.defenderDropdown, "defender");
+  [el.mode, el.currentLevel, el.targetLevel, el.defenderLevel, el.friendBoost, el.weather,
+   el.atkIvAtk, el.atkIvDef, el.atkIvSta, el.defIvDef, el.defIvSta, el.fastMove, el.chargedMove]
+    .forEach(node => { node.addEventListener("change", refresh); node.addEventListener("input", refresh); });
 
-  const allMoves = [
-    ...fastList.map(m => ({...m, kind:'fast'})),
-    ...chargedList.map(m => ({...m, kind:'charge'})),
-  ];
-
-  // Determine STAB types
-  const pokeTypes = details?.types || [];
-
-  function getStab(moveType) {
-    return pokeTypes.includes(moveType) ? 1.2 : 1.0;
-  }
-
-  const rows = allMoves.map(m => {
-    const stab = getStab(m.type);
-    const d40  = calcDmg(baseAtk, iv, curLv, m.power, stab, effect, def);
-    const d50  = calcDmg(baseAtk, iv, tgtLv, m.power, stab, effect, def);
-    const diff = d50 - d40;
-    const dps40 = (d40 / (m.duration / 1000)).toFixed(1);
-    const dps50 = (d50 / (m.duration / 1000)).toFixed(1);
-    const stabMark = stab > 1 ? ' <span style="color:var(--accent);font-size:9px">STAB</span>' : '';
-    const typeKr = TYPE_KR[m.type] || m.type;
-    const typeCls = TYPE_CLASS[m.type] || '';
-    const diffHtml = diff > 0
-      ? `<span class="dmg-diff">+${diff}</span>`
-      : `<span class="dmg-same">—</span>`;
-    return `<tr>
-      <td>
-        <span class="move-name">${m.name}${stabMark}</span>
-        <span class="move-kind move-${m.kind}">${m.kind === 'fast' ? '노말' : '스페셜'}</span>
-        <div style="font-size:10px;color:var(--text3);margin-top:2px">
-          <span class="poke-type-badge t-${typeCls}" style="font-size:9px;padding:1px 5px">${typeKr}</span>
-          위력 <b style="color:var(--text2)">${m.power}</b> · ${(m.duration/1000).toFixed(1)}s
-          ${m.energy_delta ? `· 에너지 ${m.energy_delta}` : ''}
-        </div>
-      </td>
-      <td class="dmg-40">${d40}<div style="font-size:10px;color:var(--text3)">${dps40}/s</div></td>
-      <td class="dmg-50">${d50}<div style="font-size:10px;color:var(--success)">${dps50}/s</div></td>
-      <td>${diffHtml}</td>
-    </tr>`;
-  }).join('');
-
-  document.getElementById('moveSection').innerHTML = `
-    <table class="move-table">
-      <thead>
-        <tr>
-          <th>기술</th>
-          <th>Lv.${curLv}</th>
-          <th>Lv.${tgtLv}</th>
-          <th>차이</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-    <div class="text-muted" style="margin-top:10px">STAB: 페어리/에스퍼 타입 자속보정 ×1.2 적용 · 방어자 DEF ${def} 기준</div>
-  `;
-}
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// RENDER CPM TABLE
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function renderCPMTable(poke) {
-  if (!poke) return;
-  const baseAtk = parseInt(poke.base_attack);
-  const { iv, curLv, tgtLv } = state;
-
-  const rows = LEVEL_STEPS.map(lv => {
-    const cpm = getCPM(lv);
-    const atk = ((baseAtk + iv) * cpm).toFixed(2);
-    const isCur = lv === curLv;
-    const isTgt = lv === tgtLv;
-    let cls = '';
-    if (isCur && isTgt) cls = 'cpm-row-cur cpm-row-tgt';
-    else if (isCur) cls = 'cpm-row-cur';
-    else if (isTgt) cls = 'cpm-row-tgt';
-
-    const indicator = isCur && isTgt ? '◄▶' : isCur ? '◄현재' : isTgt ? '▶목표' : '';
-    return `<tr class="${cls}">
-      <td>${lv % 1 === 0 ? `<b>${lv}</b>` : lv}</td>
-      <td>${cpm.toFixed(5)}</td>
-      <td>${atk}</td>
-      <td style="font-size:10px;color:${isCur&&isTgt?'var(--accent3)':isCur?'var(--accent2)':isTgt?'var(--accent)':'var(--text3)'}">${indicator}</td>
-    </tr>`;
-  }).join('');
-
-  document.getElementById('cpmSection').innerHTML = `
-    <table class="cpm-table">
-      <thead>
-        <tr>
-          <th>레벨</th>
-          <th>CPM</th>
-          <th>실질 ATK (IV${iv})</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-  `;
-
-  // Scroll to current level row
-  const scroll = document.querySelector('.cpm-scroll');
-  const rows2 = document.querySelectorAll('.cpm-table tbody tr');
-  const idx = LEVEL_STEPS.indexOf(curLv);
-  if (rows2[idx]) {
-    setTimeout(() => {
-      rows2[idx].scrollIntoView({ block: 'center', behavior: 'smooth' });
-    }, 100);
-  }
-}
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// RENDER UPLIFT
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function renderUplift() {
-  const { curLv, tgtLv } = state;
-  const cpmCur = getCPM(curLv);
-  const cpmTgt = getCPM(tgtLv);
-  const pct = ((cpmTgt / cpmCur - 1) * 100);
-  const sign = pct >= 0 ? '+' : '';
-
-  const poke = state.currentPoke;
-  let atkDetail = '';
-  if (poke) {
-    const baseAtk = parseInt(poke.base_attack);
-    const iv = state.iv;
-    const a1 = ((baseAtk + iv) * cpmCur).toFixed(1);
-    const a2 = ((baseAtk + iv) * cpmTgt).toFixed(1);
-    atkDetail = `실질 공격력 <strong>${a1}</strong> → <strong>${a2}</strong> (Lv.${curLv} → Lv.${tgtLv})`;
-  } else {
-    atkDetail = `CPM: ${cpmCur.toFixed(5)} → ${cpmTgt.toFixed(5)}`;
-  }
-
-  document.getElementById('upliftPct').innerHTML = `${sign}${pct.toFixed(2)}<span>%</span>`;
-  document.getElementById('upliftDetail').innerHTML = atkDetail;
-}
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// SEARCH
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const searchInput = document.getElementById('searchInput');
-const dropdown    = document.getElementById('dropdown');
-
-searchInput.addEventListener('input', () => {
-  const q = searchInput.value.trim().toLowerCase();
-  if (!q) { dropdown.classList.remove('open'); return; }
-
-  const results = state.allPokemon.filter(p => {
-    const nameMatch = p.name.toLowerCase().includes(q);
-    const idMatch   = String(p.id).includes(q);
-    return nameMatch || idMatch;
-  }).slice(0, 30);
-
-  if (!results.length) { dropdown.classList.remove('open'); return; }
-
-  dropdown.innerHTML = results.map(p => {
-    const img = spriteUrlFront(p.id);
-    return `<div class="dd-item" data-id="${p.id}">
-      <img class="dd-img" src="${img}" alt="" onerror="this.style.opacity=0.2">
-      <span class="dd-id">#${String(p.id).padStart(3,'0')}</span>
-      <span class="dd-name">${p.name}</span>
-    </div>`;
-  }).join('');
-
-  dropdown.classList.add('open');
-});
-
-dropdown.addEventListener('click', e => {
-  const item = e.target.closest('.dd-item');
-  if (!item) return;
-  const id = parseInt(item.dataset.id);
-  const poke = state.allPokemon.find(p => p.id === id);
-  if (poke) {
-    searchInput.value = poke.name;
-    dropdown.classList.remove('open');
-    selectPokemon(poke);
-  }
-});
-
-document.addEventListener('click', e => {
-  if (!e.target.closest('.search-wrap')) dropdown.classList.remove('open');
-});
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// LEVEL SLIDERS
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const curRange  = document.getElementById('curLvRange');
-const tgtRange  = document.getElementById('tgtLvRange');
-const curDisp   = document.getElementById('curLvDisplay');
-const tgtDisp   = document.getElementById('tgtLvDisplay');
-
-curRange.max = LEVEL_STEPS.length;
-tgtRange.max = LEVEL_STEPS.length;
-curRange.value = levelToSlider(40);
-tgtRange.value = levelToSlider(50);
-
-function onLevelChange() {
-  state.curLv = sliderToLevel(parseInt(curRange.value));
-  state.tgtLv = sliderToLevel(parseInt(tgtRange.value));
-  curDisp.textContent = state.curLv;
-  tgtDisp.textContent = state.tgtLv;
-  renderUplift();
-  if (state.currentPoke) {
-    renderMoves(state.currentPoke);
-    renderCPMTable(state.currentPoke);
-  }
-}
-curRange.addEventListener('input', onLevelChange);
-tgtRange.addEventListener('input', onLevelChange);
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// IV BUTTONS
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-document.querySelectorAll('.iv-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.iv-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    state.iv = parseInt(btn.dataset.iv);
-    renderUplift();
-    if (state.currentPoke) {
-      renderMoves(state.currentPoke);
-      renderCPMTable(state.currentPoke);
-    }
+  load().catch(err => {
+    console.error(err);
+    el.loadingTitle.textContent = "데이터 로딩 실패";
+    el.loadingText.textContent = "외부 API 요청이 실패했습니다. GitHub Pages에서 다시 열거나 새로고침해 보세요.";
   });
-});
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// DEF & EFFECT
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-document.getElementById('defInput').addEventListener('input', function() {
-  state.def = Math.max(1, parseInt(this.value) || 100);
-  if (state.currentPoke) renderMoves(state.currentPoke);
-});
-document.getElementById('effectInput').addEventListener('change', function() {
-  state.effect = parseFloat(this.value);
-  if (state.currentPoke) renderMoves(state.currentPoke);
-});
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// INIT
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-onLevelChange();
-loadCoreData();
+})();
 </script>
 </body>
 </html>
